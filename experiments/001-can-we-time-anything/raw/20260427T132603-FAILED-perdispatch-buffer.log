@@ -1,0 +1,39 @@
+========================================================================
+Experiment 001: Can we time anything from Python via PyObjC?
+========================================================================
+QoS: pthread_set_qos_class_self_np -> 0
+Power: Now drawing from 'AC Power'
+Device: Apple M1 Pro  registryID=4294969592
+
+supportsCounterSampling:
+  atStageBoundary           True
+  atDrawBoundary            False
+  atBlitBoundary            False
+  atDispatchBoundary        False
+  atTileDispatchBoundary    False
+
+timestamp counter set name=timestamp  counters=['GPUTimestamp']
+pipeline.threadExecutionWidth=32  maxTotalThreadsPerThreadgroup=1024
+
+timestamp correlation (start): cpu=129247658723875  gpu=129247658723875
+
+Condition A: 100 dispatches back-to-back
+  [backtoback]   1/100  gpu_delta_raw=     11792  cpu_wait_ns=    584041
+  [backtoback]  11/100  gpu_delta_raw=      8083  cpu_wait_ns=    164833
+  [backtoback]  21/100  gpu_delta_raw=      8083  cpu_wait_ns=    168167
+  [backtoback]  31/100  gpu_delta_raw=      8083  cpu_wait_ns=    189083
+Traceback (most recent call last):
+  File "/Users/vanreece/Dropbox/dev/metal_ml_lab/experiments/001-can-we-time-anything/run.py", line 304, in <module>
+    main()
+  File "/Users/vanreece/Dropbox/dev/metal_ml_lab/experiments/001-can-we-time-anything/run.py", line 255, in main
+    rows_a = run_condition("backtoback", 0.0, device, queue, pipeline,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/vanreece/Dropbox/dev/metal_ml_lab/experiments/001-can-we-time-anything/run.py", line 160, in run_condition
+    r = dispatch_once(device, queue, pipeline, out_buffer, counter_set)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/vanreece/Dropbox/dev/metal_ml_lab/experiments/001-can-we-time-anything/run.py", line 112, in dispatch_once
+    sample_buffer = make_sample_buffer(device, counter_set)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/vanreece/Dropbox/dev/metal_ml_lab/experiments/001-can-we-time-anything/run.py", line 107, in make_sample_buffer
+    raise RuntimeError(f"Counter sample buffer alloc failed: {err}")
+RuntimeError: Counter sample buffer alloc failed: Error Domain=MTLCounterErrorDomain Code=0 "Cannot allocate sample buffer" UserInfo={NSLocalizedDescription=Cannot allocate sample buffer}

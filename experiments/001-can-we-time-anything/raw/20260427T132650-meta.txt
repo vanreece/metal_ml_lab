@@ -1,0 +1,19 @@
+experiment: 001-can-we-time-anything
+timestamp: 20260427T132650
+device: Apple M1 Pro
+registry_id: 4294969592
+chip: arm  machine: arm64
+os: macOS-26.3.1-arm64-arm-64bit
+python: 3.12.9 (main, Feb 12 2025, 15:09:19) [Clang 19.1.6 ]
+pyobjc: 12.1
+qos: pthread_set_qos_class_self_np -> 0
+power: Now drawing from 'AC Power'
+num_dispatches: 100
+threads_per_grid: 32
+threads_per_threadgroup: 32
+thread_execution_width: 32
+kernel: write_tid (out[tid] = tid)
+sampling_point: MTLCounterSamplingPointAtStageBoundary
+counter_set: timestamp
+correlation_start: cpu=129340339184416 gpu=129340339184416
+correlation_end:   cpu=129439895416791 gpu=129439895416791

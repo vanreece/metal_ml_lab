@@ -14,10 +14,13 @@ answer and a link to the experiment that closed it, then moves to
   timing on M1 Pro under user-interactive QoS, AC power, no thermal
   pressure?
 - What is the smallest kernel duration we can reliably distinguish from
-  noise?
-- Does `device.supportsCounterSampling(at:)` return useful values for any
-  sampling point besides `atStageBoundary` on M-series? (Strong public
-  signal that the answer is no, but verify on actual hardware.)
+  noise? (Partial answer from 001: timestamp tick is ~42 ns on M1 Pro;
+  per-dispatch floor is ~8 µs. "Reliably distinguish from noise" still
+  pending characterization — that is 002.)
+- ~~Does `device.supportsCounterSampling(at:)` return useful values for
+  any sampling point besides `atStageBoundary` on M-series?~~ **Answered
+  by 001 on M1 Pro / macOS 26.3.1: no.** `atDraw`, `atBlit`, `atDispatch`,
+  `atTileDispatch` all return False. See `notes/answered-questions.md`.
 
 ## Methodology (depend on the foundation working)
 

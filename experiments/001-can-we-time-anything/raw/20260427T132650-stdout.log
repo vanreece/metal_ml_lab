@@ -1,0 +1,61 @@
+========================================================================
+Experiment 001: Can we time anything from Python via PyObjC?
+========================================================================
+QoS: pthread_set_qos_class_self_np -> 0
+Power: Now drawing from 'AC Power'
+Device: Apple M1 Pro  registryID=4294969592
+
+supportsCounterSampling:
+  atStageBoundary           True
+  atDrawBoundary            False
+  atBlitBoundary            False
+  atDispatchBoundary        False
+  atTileDispatchBoundary    False
+
+timestamp counter set name=timestamp  counters=['GPUTimestamp']
+pipeline.threadExecutionWidth=32  maxTotalThreadsPerThreadgroup=1024
+
+timestamp correlation (start): cpu=129340339184416  gpu=129340339184416
+
+Condition A: 100 dispatches back-to-back
+  [backtoback]   1/100  gpu_delta_raw=     11750  cpu_wait_ns=    544292
+  [backtoback]  11/100  gpu_delta_raw=      8042  cpu_wait_ns=    152750
+  [backtoback]  21/100  gpu_delta_raw=      8083  cpu_wait_ns=    166834
+  [backtoback]  31/100  gpu_delta_raw=      8083  cpu_wait_ns=    168958
+  [backtoback]  41/100  gpu_delta_raw=     11667  cpu_wait_ns=    223583
+  [backtoback]  51/100  gpu_delta_raw=      8125  cpu_wait_ns=    202666
+  [backtoback]  61/100  gpu_delta_raw=      8375  cpu_wait_ns=    216875
+  [backtoback]  71/100  gpu_delta_raw=      8125  cpu_wait_ns=    212667
+  [backtoback]  81/100  gpu_delta_raw=      8125  cpu_wait_ns=    205166
+  [backtoback]  91/100  gpu_delta_raw=      8083  cpu_wait_ns=    178583
+  [backtoback] 100/100  gpu_delta_raw=      8084  cpu_wait_ns=    309958
+  wrote 20260427T132650-backtoback.csv
+
+  backtoback (N=100)
+    gpu_delta_raw: min=8000  med=8083  p95=8667  max=925583
+    cpu_wait_ns:   min=149084  med=186750  p95=321675  max=4351542
+
+Condition B: 100 dispatches with 1s sleep between (~100s)
+  [spaced1s]   1/100  gpu_delta_raw=      8209  cpu_wait_ns=   1014750
+  [spaced1s]  11/100  gpu_delta_raw=     15625  cpu_wait_ns=    734834
+  [spaced1s]  21/100  gpu_delta_raw=     11709  cpu_wait_ns=    494000
+  [spaced1s]  31/100  gpu_delta_raw=     16166  cpu_wait_ns=    766208
+  [spaced1s]  41/100  gpu_delta_raw=     14750  cpu_wait_ns=    669041
+  [spaced1s]  51/100  gpu_delta_raw=     15875  cpu_wait_ns=    743542
+  [spaced1s]  61/100  gpu_delta_raw=     16625  cpu_wait_ns=    789000
+  [spaced1s]  71/100  gpu_delta_raw=     15958  cpu_wait_ns=    868292
+  [spaced1s]  81/100  gpu_delta_raw=     16208  cpu_wait_ns=  11867000
+  [spaced1s]  91/100  gpu_delta_raw=     12750  cpu_wait_ns=    323458
+  [spaced1s] 100/100  gpu_delta_raw=     14333  cpu_wait_ns=    840750
+  wrote 20260427T132650-spaced1s.csv
+
+  spaced1s (N=100)
+    gpu_delta_raw: min=8209  med=14730  p95=17089  max=288709
+    cpu_wait_ns:   min=243500  med=728646  p95=913029  max=11867000
+
+timestamp correlation (end):   cpu=129439895416791  gpu=129439895416791
+elapsed cpu_ticks=99556232375  gpu_ticks=99556232375  ratio_gpu/cpu=1.000000
+
+wrote 20260427T132650-meta.txt
+
+Done.
