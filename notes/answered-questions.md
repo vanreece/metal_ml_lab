@@ -76,6 +76,34 @@ laptop awake, no other heavy processes.
 **Still open for:** how this scales with kernel duration / size / load,
 and whether the same picture holds on M4 Max.
 
+## What counter sets does Metal actually expose on M1 Pro?
+
+**Answer:** Exactly one — `timestamp`, with one counter inside it
+(`GPUTimestamp`). No `StageUtilization`, no `Statistic`, no per-stage
+cycle counts, no `ComputeKernelInvocations`, no occupancy. The Metal
+headers define all of these as constants and PyObjC happily exposes
+them, but the Apple GPU driver does not populate them on M1 Pro
+(`applegpu_g13s`).
+
+This means **timing is the only "free" GPU-side signal Metal gives
+us.** Anything else (occupancy, stage activity, cycle counts) requires
+either powermetrics (sudo, sliding window, no per-kernel detail),
+Instruments / `xctrace` -> `.gputrace` (sudo, opaque format,
+reverse-engineering out of scope), or private Apple SPIs we cannot
+reach.
+
+The project's "without vendor-internal counters" thesis is therefore
+not a self-imposed constraint but a real architectural gap that Apple
+has chosen to keep closed in the public API.
+
+**Hardware/software:** Apple M1 Pro 16GB (`applegpu_g13s`),
+macOS 26.3.1, PyObjC.
+**Closed by:** `notes/counter-sets-on-m1-pro.md` (probe), 2026-04-27.
+**Still open for:** M4 Max (different `applegpu_g*` arch string,
+likely different driver behavior); future macOS versions on M1 Pro
+(Apple could add support in a driver update — worth re-running the
+probe yearly).
+
 ## Does a warmup prefix recover the "cool cadence" noise from 002?
 
 **Answer:** Yes, with caveats, for cadences ≥ 10 ms. **No, and don't
