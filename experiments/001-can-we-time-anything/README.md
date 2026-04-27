@@ -151,6 +151,14 @@ CPU wall clock around `commit`/`waitUntilCompleted` (nanoseconds):
    stage-boundary sampling envelope plus the unavoidable per-dispatch GPU
    overhead, not the kernel's compute time.
 
+   > **Update (2026-04-27, post-004):** experiment 004 swept `write_tid`
+   > thread count from 32 up to 8M and confirmed this directly — the
+   > 32-thread dispatch is **~64× below the work-dominance threshold**
+   > on M1 Pro (T\* ≈ 131K-262K threads). The 8 µs floor measured here
+   > is essentially pure dispatch overhead and tells you nothing about
+   > write_tid's per-thread cost. Cv numbers in this experiment
+   > characterize *dispatch-overhead variance*, not kernel variance.
+
 4. **Back-to-back vs spaced-1s distributions are dramatically different.**
    Spaced-1s has **zero** samples in the [8000, 8200] floor window the
    back-to-back run lives in — its minimum is 8209, median is 14730 (1.8x).

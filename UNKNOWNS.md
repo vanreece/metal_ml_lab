@@ -26,21 +26,41 @@ answer and a link to the experiment that closed it, then moves to
   "transition zone" from 002 may be similarly recoverable, but
   003's calibration probe contaminated the K=0 baseline so we can
   not directly test that here.
-- What is the smallest kernel duration we can reliably distinguish from
-  noise? (Partial answer from 001+002: timestamp tick is ~42 ns on M1
-  Pro; per-dispatch floor is ~8 µs at sleep=0 with cv dominated by
-  quantization. "Reliably distinguish from noise" depends on cadence —
-  see 002. **Updated by 003:** the floor is not even 8 µs — under
-  specific entry conditions hit accidentally at script start, the
-  same kernel ran in ~5.4 µs with cv=0.05. There is at least one
-  faster settled state than 001/002 ever observed. Reproducibility
-  of this state is the highest-priority unknown right now.)
-- **NEW from 003: What entry conditions reach the ~5.4 µs settled
-  state?** Observed once, at the very first combo of 003: cold script
-  start + caffeinate launch + 1s cooldown + 10-dispatch calibration
-  burst → all 40 subsequent measured dispatches at p50=5375 ns. Never
-  reproduced anywhere else in the same run. Until this is reproduced,
-  every "fastest possible" timing claim has a footnote.
+- ~~What is the smallest kernel duration we can reliably distinguish from
+  noise?~~ **Substantively answered by 001+002+003+004.** Timestamp tick
+  is ~42 ns; the dispatch-overhead floor sits at ~8 µs back-to-back
+  (K=0) and ~9 µs with K=1 warmup; cv depends on cadence (002).
+  **004 reframes this:** the 8 µs / 9 µs floors are *dispatch-overhead*
+  floors, not kernel floors — they show up regardless of kernel work
+  below the work-dominance threshold. The smallest kernel work
+  reliably distinguishable from overhead is the work that takes the
+  median above the overhead floor by enough to fall outside its
+  variance. For `write_tid` that means ≥ 131K-262K threads on M1 Pro;
+  for `fma_loop` that means ≥ 256 iters per thread (with a +21 µs
+  step at the 192→256 boundary that is itself unexplained). See
+  `notes/answered-questions.md`.
+- ~~**NEW from 003: What entry conditions reach the ~5.4 µs settled
+  state?**~~ **Closed by 004 as non-reproducible.** Across 5 sequential
+  attempts (each a fresh post-cooldown calibration burst followed by
+  40 measured dispatches with no warmup), 0/200 measurements landed
+  in the [5000, 6000] ns window. Every attempt converged to the
+  familiar ~8 µs back-to-back floor. Filed as a single-launch artifact
+  whose mechanism we cannot isolate from the available data. See
+  `notes/answered-questions.md`.
+- **NEW from 004: What is the +21 µs step at `fma_loop` iters
+  192→256?** Median jumps from 12.6 µs to 34.2 µs — three orders of
+  magnitude bigger than the actual work added by 64 extra FMAs. Looks
+  like a compiler-or-hardware threshold (register spilling,
+  unrolling-heuristic flip, instruction-cache crossover) but we have
+  not isolated which. Affects whether kernel-complexity is a smooth
+  axis we can rely on. Probably answerable cheaply by dumping Metal
+  AIR / GPU assembly at the two boundary points.
+- **NEW from 004: Why does `fma_loop` exhibit bimodal between-sweep
+  variance at iters = 8192-16384?** Within a single script run with
+  30s between-sweep cooldown, p50s vary 2.5× across sweeps in this
+  duration band (~0.4-1.6 ms dispatches), but are stable everywhere
+  else. Plausibly related to 002's "1-10 ms transition zone" of the
+  GPU power state machine, but we have not measured directly.
 - **NEW from 003: Does the calibration kernel as thermometer have
   enough resolution to distinguish power states without disturbing
   them?** Partial answer: a 10-dispatch probe can tell hot vs cool

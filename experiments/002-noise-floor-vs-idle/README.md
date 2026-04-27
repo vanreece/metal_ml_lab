@@ -207,6 +207,18 @@ CPU wall clock around `commit`/`waitUntilCompleted` (ns):
 Both endpoints reproduce — the timing setup is stable across runs and
 the data trustworthy.
 
+> **Update (2026-04-27, post-004):** the cv numbers in this table
+> describe *dispatch-overhead* variance, not `write_tid` kernel
+> variance. Experiment 004 swept `write_tid` thread count and showed
+> the 32-thread dispatch sits ~64× below the work-dominance threshold
+> on M1 Pro — at this size the median is dominated by encoder/commit/
+> wait overhead, and any cv is the variance of that overhead under
+> different cadences. Reading these numbers as "the noise floor of
+> Metal timing" is fine; reading them as "the noise floor of running
+> a memory-write kernel" is not. See
+> `experiments/004-work-dominance-floor/README.md` § "What this means
+> operationally".
+
 ## Surprises
 
 1. **The 1ms condition has cv=7.03 — the *highest* of any condition by

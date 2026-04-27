@@ -1,0 +1,193 @@
+experiment: 004-work-dominance-floor
+timestamp: 20260427T152008
+device: Apple M1 Pro
+registry_id: 4294969592
+architecture: applegpu_g13s
+chip: arm  machine: arm64
+os: macOS-26.3.1-arm64-arm-64bit
+python: 3.12.9 (main, Feb 12 2025, 15:09:19) [Clang 19.1.6 ]
+pyobjc: 12.1
+qos: pthread_set_qos_class_self_np -> 0
+power: Now drawing from 'AC Power'
+powermetrics: skipped (EXP004_NO_POWERMETRICS set)
+powermetrics_started_wall_ns: 135205942494291
+caffeinate: started pid=48024
+display_powerstate_start: Driver ID  Current State  Max State  Current State Description
+Internal failure: Failed to get power state information
+display_powerstate_end:   Driver ID  Current State  Max State  Current State Description
+Internal failure: Failed to get power state information
+pmset_assertions_start: |
+  2026-04-27 15:20:08 -0700 
+  Assertion status system-wide:
+     BackgroundTask                 0
+     ApplePushServiceTask           0
+     UserIsActive                   1
+     PreventUserIdleDisplaySleep    0
+     SoftwareUpdateTask             0
+     PreventSystemSleep             0
+     ExternalMedia                  0
+     PreventUserIdleSystemSleep     1
+     NetworkClientActive            0
+  Listed by owning process:
+     pid 47919(caffeinate): [0x00021000000192bb] 00:00:37 PreventUserIdleSystemSleep named: "caffeinate command-line tool"  
+  	Details: caffeinate asserting for 300 secs
+  	Localized=THE CAFFEINATE TOOL IS PREVENTING SLEEP.
+  	Timeout will fire in 263 secs Action=TimeoutActionRelease
+     pid 343(powerd): [0x00020fe200019267] 00:01:07 PreventUserIdleSystemSleep named: "Powerd - Prevent sleep while display is on"  
+     pid 343(powerd): [0x00020fe200099264] 00:01:07 UserIsActive named: "com.apple.powermanagement.kernel.useractive IOPMrootDomain:WakeTypeUser"  
+  	Timeout will fire in 533 secs Action=TimeoutActionRelease
+     pid 403(WindowServer): [0x00020fe20009926f] 00:00:00 UserIsActive named: "com.apple.iohideventsystem.queue.tickle serviceID:100078e3a service:AppleMultitouchDevice product:Apple Internal Keyboard / Trackpad eventType:11"  
+  	Timeout will fire in 600 secs Action=TimeoutActionRelease
+  Kernel Assertions: 0x100=MAGICWAKE
+     id=996  level=255 0x100=MAGICWAKE creat=  mod= description=en0 owner=IOSkywalkNetworkBSDClient
+experiment_started_wall_ns: 135206176195625
+experiment_ended_wall_ns:   135565258754291
+write_tid_thread_levels: [32, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 8388608]
+fma_iters_levels: [16, 32, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 2048, 4096, 8192, 16384, 32768, 65536]
+threadgroup_size: 32
+fma_thread_count: 32
+n_per_combo: 300
+n_sweeps: 3
+per_combo_cooldown_s: 2.0
+between_sweep_cooldown_s: 30.0
+calibration_burst: 10
+repro_attempts: 5
+repro_cooldown_s: 5.0
+repro_calibration_burst: 10
+repro_measured_trials: 40
+floor_window: (8000, 8200)
+low_floor_window: (5000, 6000)
+kernel_measured_axisA: write_tid (varied thread count)
+kernel_measured_axisB: fma_loop (32 threads, varied per-thread iters)
+kernel_calibration: write_tid 32 threads
+warmup_recipe: K=1 untimed dispatch of measured kernel (per 003 finding)
+sampling_point: MTLCounterSamplingPointAtStageBoundary
+correlation_start: cpu=135206176187458 gpu=135206176187458
+correlation_end:   cpu=135565258762125 gpu=135565258762125
+experiment_wall_clock_s: 359.08
+
+per-(axis, level, sweep) summary (min | p50 | p95 | p99 | max | cv | in_floor):
+  fma_loop_iters           level=      16 sweep=0 min=   8208 p50=     9375 p95=    10125 p99=     12794 max=     13667 cv=0.0858 in_floor=  0/300
+  fma_loop_iters           level=      16 sweep=1 min=   8084 p50=     9188 p95=    10167 p99=     13376 max=    666333 cv=4.1290 in_floor=  2/300
+  fma_loop_iters           level=      16 sweep=2 min=   8375 p50=     8980 p95=    11667 p99=     13125 max=    191709 cv=1.1771 in_floor=  0/300
+  fma_loop_iters           level=      32 sweep=0 min=   8375 p50=     9667 p95=    10084 p99=     12545 max=     13000 cv=0.0730 in_floor=  0/300
+  fma_loop_iters           level=      32 sweep=1 min=   8208 p50=     9625 p95=    10292 p99=     12505 max=     13459 cv=0.0807 in_floor=  0/300
+  fma_loop_iters           level=      32 sweep=2 min=   8459 p50=     9125 p95=    11750 p99=     13502 max=     14375 cv=0.1127 in_floor=  0/300
+  fma_loop_iters           level=      64 sweep=0 min=   8833 p50=     9166 p95=    10711 p99=     12713 max=     15416 cv=0.0823 in_floor=  0/300
+  fma_loop_iters           level=      64 sweep=1 min=   8792 p50=    10208 p95=    11006 p99=     13291 max=     15667 cv=0.0809 in_floor=  0/300
+  fma_loop_iters           level=      64 sweep=2 min=   9000 p50=    10270 p95=    12085 p99=     12918 max=     13375 cv=0.0795 in_floor=  0/300
+  fma_loop_iters           level=      96 sweep=0 min=   9583 p50=    10958 p95=    12627 p99=     13296 max=     15333 cv=0.0750 in_floor=  0/300
+  fma_loop_iters           level=      96 sweep=1 min=   9667 p50=    11000 p95=    12627 p99=     14596 max=    582833 cv=3.0029 in_floor=  0/300
+  fma_loop_iters           level=      96 sweep=2 min=   9667 p50=    10208 p95=    12098 p99=     13969 max=    622625 cv=3.5137 in_floor=  0/300
+  fma_loop_iters           level=     128 sweep=0 min=   9875 p50=    11375 p95=    12019 p99=     14376 max=     52000 cv=0.2408 in_floor=  0/300
+  fma_loop_iters           level=     128 sweep=1 min=   9958 p50=    11542 p95=    13377 p99=     14460 max=     17834 cv=0.0810 in_floor=  0/300
+  fma_loop_iters           level=     128 sweep=2 min=  10000 p50=    11500 p95=    13468 p99=     15543 max=     15667 cv=0.0886 in_floor=  0/300
+  fma_loop_iters           level=     192 sweep=0 min=  11166 p50=    12666 p95=    13294 p99=     15876 max=     24125 cv=0.0852 in_floor=  0/300
+  fma_loop_iters           level=     192 sweep=1 min=  10917 p50=    12666 p95=    14127 p99=     16987 max=    585084 cv=2.6113 in_floor=  0/300
+  fma_loop_iters           level=     192 sweep=2 min=  10917 p50=    12583 p95=    14883 p99=     15673 max=     16625 cv=0.0852 in_floor=  0/300
+  fma_loop_iters           level=     256 sweep=0 min=  32917 p50=    34250 p95=    34666 p99=     36340 max=     39292 cv=0.0192 in_floor=  0/300
+  fma_loop_iters           level=     256 sweep=1 min=  32916 p50=    34250 p95=    36461 p99=     37542 max=     39417 cv=0.0288 in_floor=  0/300
+  fma_loop_iters           level=     256 sweep=2 min=  27041 p50=    34000 p95=    36462 p99=     36960 max=     37125 cv=0.0311 in_floor=  0/300
+  fma_loop_iters           level=     384 sweep=0 min=  45000 p50=    46417 p95=    46791 p99=     48761 max=     51958 cv=0.0142 in_floor=  0/300
+  fma_loop_iters           level=     384 sweep=1 min=  44542 p50=    46250 p95=    47856 p99=     51755 max=    670750 cv=0.7799 in_floor=  0/300
+  fma_loop_iters           level=     384 sweep=2 min=  45000 p50=    46104 p95=    46629 p99=     49170 max=     50084 cv=0.0161 in_floor=  0/300
+  fma_loop_iters           level=     512 sweep=0 min=  57292 p50=    58292 p95=    59317 p99=     61671 max=     63083 cv=0.0135 in_floor=  0/300
+  fma_loop_iters           level=     512 sweep=1 min=  57417 p50=    58792 p95=    59044 p99=     62377 max=     70292 cv=0.0149 in_floor=  0/300
+  fma_loop_iters           level=     512 sweep=2 min=  23875 p50=    47479 p95=    58877 p99=     60013 max=    130667 cv=0.2920 in_floor=  0/300
+  fma_loop_iters           level=     768 sweep=0 min=  81708 p50=    82980 p95=    83292 p99=     83936 max=     88333 cv=0.0064 in_floor=  0/300
+  fma_loop_iters           level=     768 sweep=1 min=  80875 p50=    81625 p95=    85083 p99=    114402 max=    622167 cv=0.4158 in_floor=  0/300
+  fma_loop_iters           level=     768 sweep=2 min=  81666 p50=    82916 p95=    84752 p99=    209710 max=    518250 cv=0.4583 in_floor=  0/300
+  fma_loop_iters           level=    1024 sweep=0 min= 106167 p50=   107458 p95=   107794 p99=    110669 max=    116250 cv=0.0072 in_floor=  0/300
+  fma_loop_iters           level=    1024 sweep=1 min= 106167 p50=   107292 p95=   107791 p99=    110712 max=    114000 cv=0.0073 in_floor=  0/300
+  fma_loop_iters           level=    1024 sweep=2 min= 106041 p50=   107291 p95=   107667 p99=    110430 max=    747959 cv=0.3448 in_floor=  0/300
+  fma_loop_iters           level=    2048 sweep=0 min=  82291 p50=   204520 p95=   205044 p99=    205557 max=    207500 cv=0.1969 in_floor=  0/300
+  fma_loop_iters           level=    2048 sweep=1 min= 203542 p50=   204542 p95=   205317 p99=    208459 max=    653458 cv=0.1340 in_floor=  0/300
+  fma_loop_iters           level=    2048 sweep=2 min= 203500 p50=   204500 p95=   206921 p99=    209008 max=    564500 cv=0.1032 in_floor=  0/300
+  fma_loop_iters           level=    4096 sweep=0 min= 120666 p50=   398875 p95=   399544 p99=    402012 max=    413167 cv=0.2891 in_floor=  0/300
+  fma_loop_iters           level=    4096 sweep=1 min= 180292 p50=   399208 p95=   401383 p99=    402794 max=   1096834 cv=0.1799 in_floor=  0/300
+  fma_loop_iters           level=    4096 sweep=2 min= 120625 p50=   398833 p95=   400109 p99=    405246 max=    464667 cv=0.2498 in_floor=  0/300
+  fma_loop_iters           level=    8192 sweep=0 min= 237542 p50=   316666 p95=   789292 p99=    789467 max=    855458 cv=0.8006 in_floor=  0/300
+  fma_loop_iters           level=    8192 sweep=1 min= 787917 p50=   789125 p95=   793065 p99=    798632 max=    970709 cv=0.0145 in_floor=  0/300
+  fma_loop_iters           level=    8192 sweep=2 min= 237583 p50=   396166 p95=   789044 p99=    789397 max=   1049208 cv=0.5057 in_floor=  0/300
+  fma_loop_iters           level=   16384 sweep=0 min= 471250 p50=   471938 p95=  1568917 p99=   1572631 max=   1923416 cv=0.9905 in_floor=  0/300
+  fma_loop_iters           level=   16384 sweep=1 min= 471375 p50=   628250 p95=  1569000 p99=   1573425 max=   1635750 cv=0.8334 in_floor=  0/300
+  fma_loop_iters           level=   16384 sweep=2 min= 471417 p50=   472000 p95=  1568791 p99=   1568958 max=   1573667 cv=1.0015 in_floor=  0/300
+  fma_loop_iters           level=   32768 sweep=0 min= 939083 p50=   939709 p95=  1565710 p99=   1877211 max=   1878042 cv=0.2721 in_floor=  0/300
+  fma_loop_iters           level=   32768 sweep=1 min= 939041 p50=   939584 p95=  1576360 p99=   3127959 max=   3716875 cv=0.5068 in_floor=  0/300
+  fma_loop_iters           level=   32768 sweep=2 min= 939167 p50=   939667 p95=  1878166 p99=   2509367 max=   3193000 cv=0.4070 in_floor=  0/300
+  fma_loop_iters           level=   65536 sweep=0 min=1874583 p50=  1875375 p95=  3749291 p99=   6246172 max=   6246792 cv=0.4339 in_floor=  0/300
+  fma_loop_iters           level=   65536 sweep=1 min=1874500 p50=  1875250 p95=  4997881 p99=   6246584 max=   6247292 cv=0.5464 in_floor=  0/300
+  fma_loop_iters           level=   65536 sweep=2 min=1874708 p50=  1875125 p95=  3124919 p99=   3750601 max=   6246750 cv=0.2767 in_floor=  0/300
+  write_tid_threadcount    level=      32 sweep=0 min=   6125 p50=     8792 p95=    11333 p99=     13180 max=    572291 cv=3.7244 in_floor=  3/300
+  write_tid_threadcount    level=      32 sweep=1 min=   8042 p50=     9208 p95=    11051 p99=     12174 max=     13125 cv=0.0891 in_floor=  4/300
+  write_tid_threadcount    level=      32 sweep=2 min=   7958 p50=     9167 p95=    11500 p99=     12460 max=     12917 cv=0.1070 in_floor= 12/300
+  write_tid_threadcount    level=      64 sweep=0 min=   7833 p50=     9187 p95=    11333 p99=     12761 max=    638583 cv=5.0912 in_floor=  0/300
+  write_tid_threadcount    level=      64 sweep=1 min=   8167 p50=     9458 p95=    11291 p99=     14387 max=    712625 cv=5.2199 in_floor=  2/300
+  write_tid_threadcount    level=      64 sweep=2 min=   7958 p50=     9125 p95=    11250 p99=     11544 max=     12333 cv=0.0837 in_floor= 12/300
+  write_tid_threadcount    level=      96 sweep=0 min=   7917 p50=     8167 p95=     9954 p99=     12169 max=     13875 cv=0.1098 in_floor=174/300
+  write_tid_threadcount    level=      96 sweep=1 min=   7917 p50=     8333 p95=    12167 p99=     12667 max=     12875 cv=0.1488 in_floor= 62/300
+  write_tid_threadcount    level=      96 sweep=2 min=   8000 p50=     9084 p95=    11708 p99=     12254 max=     13584 cv=0.1162 in_floor=  9/300
+  write_tid_threadcount    level=     128 sweep=0 min=   7958 p50=     8167 p95=     8333 p99=      8583 max=     11209 cv=0.0243 in_floor=196/300
+  write_tid_threadcount    level=     128 sweep=1 min=   8125 p50=     9416 p95=    10041 p99=     12047 max=     14250 cv=0.0767 in_floor=  2/300
+  write_tid_threadcount    level=     128 sweep=2 min=   8000 p50=     9084 p95=    11212 p99=     12375 max=     12583 cv=0.0923 in_floor= 22/300
+  write_tid_threadcount    level=     192 sweep=0 min=   8291 p50=     9584 p95=    10548 p99=     14085 max=     14833 cv=0.0880 in_floor=  0/300
+  write_tid_threadcount    level=     192 sweep=1 min=   8208 p50=     9708 p95=    11544 p99=     12461 max=    520042 cv=3.0409 in_floor=  0/300
+  write_tid_threadcount    level=     192 sweep=2 min=   8041 p50=     8708 p95=    11461 p99=     12045 max=     13125 cv=0.1126 in_floor= 12/300
+  write_tid_threadcount    level=     256 sweep=0 min=   8166 p50=     9084 p95=    10127 p99=     12344 max=   2485541 cv=15.7398 in_floor=  7/300
+  write_tid_threadcount    level=     256 sweep=1 min=   8250 p50=     9167 p95=    10385 p99=     12751 max=    571959 cv=3.5438 in_floor=  0/300
+  write_tid_threadcount    level=     256 sweep=2 min=   8042 p50=     8875 p95=    11625 p99=     12752 max=     13792 cv=0.1178 in_floor=  5/300
+  write_tid_threadcount    level=     384 sweep=0 min=   8417 p50=     9875 p95=    10586 p99=     12333 max=     13000 cv=0.0764 in_floor=  0/300
+  write_tid_threadcount    level=     384 sweep=1 min=   8625 p50=     9958 p95=    12627 p99=     13834 max=     14500 cv=0.1113 in_floor=  0/300
+  write_tid_threadcount    level=     384 sweep=2 min=   8042 p50=     8916 p95=    11667 p99=     12460 max=     41667 cv=0.2365 in_floor=  5/300
+  write_tid_threadcount    level=     512 sweep=0 min=   8500 p50=    10000 p95=    12042 p99=     13209 max=     13875 cv=0.0955 in_floor=  0/300
+  write_tid_threadcount    level=     512 sweep=1 min=   8708 p50=    10146 p95=    12377 p99=     13585 max=     14125 cv=0.0935 in_floor=  0/300
+  write_tid_threadcount    level=     512 sweep=2 min=   8291 p50=     8875 p95=    11794 p99=     12419 max=     74375 cv=0.4387 in_floor=  0/300
+  write_tid_threadcount    level=     768 sweep=0 min=   8083 p50=     8500 p95=     9083 p99=     11877 max=     61250 cv=0.3626 in_floor= 23/300
+  write_tid_threadcount    level=     768 sweep=1 min=   8708 p50=    10166 p95=    12046 p99=     13627 max=    548625 cv=3.0591 in_floor=  0/300
+  write_tid_threadcount    level=     768 sweep=2 min=   8333 p50=     9458 p95=    11963 p99=     13004 max=    599708 cv=3.6041 in_floor=  0/300
+  write_tid_threadcount    level=    1024 sweep=0 min=   8125 p50=     8729 p95=    10250 p99=     12001 max=    539750 cv=3.5119 in_floor= 10/300
+  write_tid_threadcount    level=    1024 sweep=1 min=   8709 p50=    10292 p95=    11959 p99=     13092 max=     15292 cv=0.0855 in_floor=  0/300
+  write_tid_threadcount    level=    1024 sweep=2 min=   8167 p50=     8708 p95=    11421 p99=     12688 max=    567334 cv=3.7034 in_floor=  1/300
+  write_tid_threadcount    level=    1536 sweep=0 min=   8583 p50=     9854 p95=    10708 p99=     13983 max=    581625 cv=3.3607 in_floor=  0/300
+  write_tid_threadcount    level=    1536 sweep=1 min=   8750 p50=     9958 p95=    10750 p99=     13713 max=    644708 cv=3.6816 in_floor=  0/300
+  write_tid_threadcount    level=    1536 sweep=2 min=   8375 p50=     9458 p95=    11377 p99=     12293 max=     13292 cv=0.0871 in_floor=  0/300
+  write_tid_threadcount    level=    2048 sweep=0 min=   8666 p50=     9980 p95=    10709 p99=     13126 max=    521667 cv=2.9613 in_floor=  0/300
+  write_tid_threadcount    level=    2048 sweep=1 min=   8833 p50=    10187 p95=    12086 p99=     13544 max=     14167 cv=0.0910 in_floor=  0/300
+  write_tid_threadcount    level=    2048 sweep=2 min=   8458 p50=     8958 p95=    10881 p99=     12591 max=    554625 cv=3.5162 in_floor=  0/300
+  write_tid_threadcount    level=    4096 sweep=0 min=   8583 p50=    10292 p95=    12462 p99=     12964 max=     14125 cv=0.0870 in_floor=  0/300
+  write_tid_threadcount    level=    4096 sweep=1 min=   9000 p50=    10375 p95=    13092 p99=     14461 max=     15417 cv=0.1071 in_floor=  0/300
+  write_tid_threadcount    level=    4096 sweep=2 min=   8666 p50=     9042 p95=    10131 p99=     12916 max=     13125 cv=0.0852 in_floor=  0/300
+  write_tid_threadcount    level=    8192 sweep=0 min=   9333 p50=    10708 p95=    11417 p99=     14001 max=     14417 cv=0.0764 in_floor=  0/300
+  write_tid_threadcount    level=    8192 sweep=1 min=   9209 p50=    11041 p95=    11500 p99=     12138 max=     14792 cv=0.0594 in_floor=  0/300
+  write_tid_threadcount    level=    8192 sweep=2 min=   9166 p50=    10250 p95=    12152 p99=     14416 max=    599541 cv=3.3205 in_floor=  0/300
+  write_tid_threadcount    level=   16384 sweep=0 min=   8792 p50=    11541 p95=    13047 p99=     15041 max=   2697417 cv=13.4370 in_floor=  0/300
+  write_tid_threadcount    level=   16384 sweep=1 min=  10042 p50=    11458 p95=    13591 p99=     15043 max=    449958 cv=2.2109 in_floor=  0/300
+  write_tid_threadcount    level=   16384 sweep=2 min=   9958 p50=    10562 p95=    13417 p99=     14460 max=    255000 cv=1.3376 in_floor=  0/300
+  write_tid_threadcount    level=   32768 sweep=0 min=  12125 p50=    13646 p95=    14212 p99=     16960 max=     20417 cv=0.0614 in_floor=  0/300
+  write_tid_threadcount    level=   32768 sweep=1 min=  12250 p50=    13667 p95=    14208 p99=     16416 max=     18250 cv=0.0505 in_floor=  0/300
+  write_tid_threadcount    level=   32768 sweep=2 min=  12250 p50=    13542 p95=    13875 p99=     14962 max=     16666 cv=0.0385 in_floor=  0/300
+  write_tid_threadcount    level=   65536 sweep=0 min=  15584 p50=    17000 p95=    19586 p99=    237059 max=    565458 cv=2.3600 in_floor=  0/300
+  write_tid_threadcount    level=   65536 sweep=1 min=  15791 p50=    17291 p95=    18710 p99=     22712 max=    396125 cv=1.2697 in_floor=  0/300
+  write_tid_threadcount    level=   65536 sweep=2 min=  15666 p50=    16917 p95=    17583 p99=     20752 max=     21292 cv=0.0443 in_floor=  0/300
+  write_tid_threadcount    level=  131072 sweep=0 min=  22000 p50=    22625 p95=    23815 p99=     26751 max=    109834 cv=0.2253 in_floor=  0/300
+  write_tid_threadcount    level=  131072 sweep=1 min=  22833 p50=    24250 p95=    25335 p99=     29294 max=    539500 cv=1.2273 in_floor=  0/300
+  write_tid_threadcount    level=  131072 sweep=2 min=  21875 p50=    22417 p95=    23875 p99=     24299 max=     27375 cv=0.0273 in_floor=  0/300
+  write_tid_threadcount    level=  262144 sweep=0 min=  37917 p50=    40333 p95=    42544 p99=     45001 max=    261542 cv=0.3175 in_floor=  0/300
+  write_tid_threadcount    level=  262144 sweep=1 min=  38666 p50=    40562 p95=    42879 p99=     43922 max=     44542 cv=0.0251 in_floor=  0/300
+  write_tid_threadcount    level=  262144 sweep=2 min=  38208 p50=    40375 p95=    42669 p99=     44132 max=     69125 cv=0.0493 in_floor=  0/300
+  write_tid_threadcount    level=  524288 sweep=0 min=  59667 p50=    62167 p95=    66300 p99=     69014 max=    517750 cv=0.4236 in_floor=  0/300
+  write_tid_threadcount    level=  524288 sweep=1 min=  59958 p50=    62000 p95=    66093 p99=     67716 max=     69709 cv=0.0281 in_floor=  0/300
+  write_tid_threadcount    level=  524288 sweep=2 min=  47875 p50=    62750 p95=    69625 p99=     71172 max=     73875 cv=0.0522 in_floor=  0/300
+  write_tid_threadcount    level= 1048576 sweep=0 min=  98459 p50=   101542 p95=   109267 p99=    113251 max=    115416 cv=0.0317 in_floor=  0/300
+  write_tid_threadcount    level= 1048576 sweep=1 min=  97750 p50=   101604 p95=   109583 p99=    115209 max=    118667 cv=0.0340 in_floor=  0/300
+  write_tid_threadcount    level= 1048576 sweep=2 min=  75042 p50=   104980 p95=   114512 p99=    118907 max=    127000 cv=0.0929 in_floor=  0/300
+  write_tid_threadcount    level= 8388608 sweep=0 min= 255000 p50=   392750 p95=   402290 p99=    613666 max=    682458 cv=0.1814 in_floor=  0/300
+  write_tid_threadcount    level= 8388608 sweep=1 min= 388916 p50=   393916 p95=   402892 p99=    607729 max=    694958 cv=0.0917 in_floor=  0/300
+  write_tid_threadcount    level= 8388608 sweep=2 min= 388500 p50=   394104 p95=   413317 p99=    599832 max=    657458 cv=0.0941 in_floor=  0/300
+
+5.4us reproduction summary:
+  attempt 0: min= 8041 p50=  8146 p95=  8546 cv=0.0201 in_low_floor[5000,6000]= 0/40
+  attempt 1: min= 8208 p50=  8333 p95= 22133 cv=1.7346 in_low_floor[5000,6000]= 0/40
+  attempt 2: min= 7875 p50=  8084 p95=  8169 cv=0.0112 in_low_floor[5000,6000]= 0/40
+  attempt 3: min= 7500 p50=  8166 p95= 10583 cv=0.0887 in_low_floor[5000,6000]= 0/40
+  attempt 4: min= 8041 p50=  8334 p95=  9428 cv=0.0773 in_low_floor[5000,6000]= 0/40

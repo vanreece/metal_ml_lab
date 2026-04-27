@@ -369,6 +369,22 @@ The rest of the run sat at the more familiar ~9.5–10 µs steady state
 "8083 ns floor" was already a non-fundamental observation — there is
 at least one faster state, possibly more.
 
+> **Update (2026-04-27, post-004):** experiment 004 ran a tight
+> 5-attempt protocol that re-created the entry conditions of this
+> first combo (5 s cooldown → 10-dispatch calibration burst → 40
+> measured dispatches with no warmup) and got **0/200 measured
+> dispatches in [5000, 6000] ns** — every attempt converged to the
+> familiar ~8 µs back-to-back floor. The 5.4 µs state is filed as a
+> single-launch artifact whose trigger we cannot isolate from the
+> available data. See `experiments/004-work-dominance-floor/README.md`
+> § "5.4 µs reproducibility — 0/5" and Surprise §3.
+> The "001/002's 8083 ns floor was non-fundamental" framing above
+> still stands directionally — 001/002 *did* measure dispatch
+> overhead rather than kernel time (004 confirmed `write_tid` 32t
+> sits ~64× below the work-dominance threshold on M1 Pro) — but the
+> specific claim that "there is at least one faster *settled* state"
+> is unverified and not actionable.
+
 ### 2. The calibration probe is itself a 10-dispatch warmup, contaminating the K=0 measurements
 
 Compare K=0 sleep_1ms across experiments:
