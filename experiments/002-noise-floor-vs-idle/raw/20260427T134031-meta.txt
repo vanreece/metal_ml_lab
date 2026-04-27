@@ -1,0 +1,28 @@
+experiment: 002-noise-floor-vs-idle
+timestamp: 20260427T134031
+device: Apple M1 Pro
+registry_id: 4294969592
+chip: arm  machine: arm64
+os: macOS-26.3.1-arm64-arm-64bit
+python: 3.12.9 (main, Feb 12 2025, 15:09:19) [Clang 19.1.6 ]
+pyobjc: 12.1
+qos: pthread_set_qos_class_self_np -> 0
+power: Now drawing from 'AC Power'
+n_per_condition: 200
+sleep_conditions_s: [0.0, 0.001, 0.01, 0.1, 1.0]
+threads_per_grid: 32
+threads_per_threadgroup: 32
+thread_execution_width: 32
+kernel: write_tid (out[tid] = tid)
+sampling_point: MTLCounterSamplingPointAtStageBoundary
+counter_set: timestamp
+correlation_start: cpu=130161508835833 gpu=130161508835833
+correlation_end:   cpu=130385643835458 gpu=130385643835458
+floor_window: (8000, 8200)
+
+per-condition summary:
+  sleep_0: gpu_delta_raw min=7875 p50=8083 p95=8250 p99=11586 max=83750 cv=0.6636 in_floor=177/200
+  sleep_1ms: gpu_delta_raw min=7958 p50=8291 p95=9381 p99=258385 max=663208 cv=7.0296 in_floor=66/200
+  sleep_10ms: gpu_delta_raw min=7500 p50=11292 p95=15646 p99=77819 max=319708 cv=2.7148 in_floor=0/200
+  sleep_100ms: gpu_delta_raw min=7208 p50=13791 p95=19711 p99=133210 max=409834 cv=2.2286 in_floor=0/200
+  sleep_1s: gpu_delta_raw min=10333 p50=15229 p95=20252 p99=21083 max=48250 cv=0.2124 in_floor=0/200

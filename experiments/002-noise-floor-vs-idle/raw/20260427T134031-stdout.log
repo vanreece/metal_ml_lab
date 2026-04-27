@@ -1,0 +1,82 @@
+==============================================================================
+Experiment 002: noise floor vs inter-dispatch idle on M1 Pro
+==============================================================================
+QoS: pthread_set_qos_class_self_np -> 0
+Power: Now drawing from 'AC Power'
+Device: Apple M1 Pro  registryID=4294969592
+pipeline.threadExecutionWidth=32  maxTotalThreadsPerThreadgroup=1024
+conditions: sleep_s in [0.0, 0.001, 0.01, 0.1, 1.0]  N_per_condition=200
+timestamp correlation (start): cpu=130161508835833  gpu=130161508835833
+
+Condition sleep_0: sleep_s=0.0 (estimated >=0.0s)
+  [sleep_0]   1/200  gpu_delta_raw=     11208  cpu_wait_ns=    425666
+  [sleep_0]  50/200  gpu_delta_raw=      8084  cpu_wait_ns=    169375
+  [sleep_0] 100/200  gpu_delta_raw=      8041  cpu_wait_ns=    171291
+  [sleep_0] 150/200  gpu_delta_raw=      8084  cpu_wait_ns=    260875
+  [sleep_0] 200/200  gpu_delta_raw=      8125  cpu_wait_ns=    267917
+  wrote 20260427T134031-sleep_0.csv
+
+  sleep_0 (N=200)
+    gpu_delta_raw: min=    7875  p05=    8000  p50=    8083  p95=    8250  p99=   11586  max=    83750
+                   cv(stddev/p50)=0.6636  in_floor[8000,8200]=177/200
+    cpu_wait_ns:   min=  146042  p05=  153294  p50=  189188  p95=  250315  p99=  299373  max=   425666
+
+Condition sleep_1ms: sleep_s=0.001 (estimated >=0.2s)
+  [sleep_1ms]   1/200  gpu_delta_raw=    256875  cpu_wait_ns=    489083
+  [sleep_1ms]  50/200  gpu_delta_raw=      8250  cpu_wait_ns=    224666
+  [sleep_1ms] 100/200  gpu_delta_raw=      8250  cpu_wait_ns=    259375
+  [sleep_1ms] 150/200  gpu_delta_raw=      8209  cpu_wait_ns=    201167
+  [sleep_1ms] 200/200  gpu_delta_raw=      8375  cpu_wait_ns=    226416
+  wrote 20260427T134031-sleep_1ms.csv
+
+  sleep_1ms (N=200)
+    gpu_delta_raw: min=    7958  p05=    8083  p50=    8291  p95=    9381  p99=  258385  max=   663208
+                   cv(stddev/p50)=7.0296  in_floor[8000,8200]=66/200
+    cpu_wait_ns:   min=  172000  p05=  187873  p50=  215166  p95=  284492  p99=  490529  max=   913291
+
+Condition sleep_10ms: sleep_s=0.01 (estimated >=2.0s)
+  [sleep_10ms]   1/200  gpu_delta_raw=     11667  cpu_wait_ns=    496041
+  [sleep_10ms]  50/200  gpu_delta_raw=     11000  cpu_wait_ns=    562000
+  [sleep_10ms] 100/200  gpu_delta_raw=     10958  cpu_wait_ns=    524750
+  [sleep_10ms] 150/200  gpu_delta_raw=     14250  cpu_wait_ns=    781125
+  [sleep_10ms] 200/200  gpu_delta_raw=     14167  cpu_wait_ns=    802542
+  wrote 20260427T134031-sleep_10ms.csv
+
+  sleep_10ms (N=200)
+    gpu_delta_raw: min=    7500  p05=   10834  p50=   11292  p95=   15646  p99=   77819  max=   319708
+                   cv(stddev/p50)=2.7148  in_floor[8000,8200]=0/200
+    cpu_wait_ns:   min=  245125  p05=  311385  p50=  581604  p95=  885156  p99= 2053220  max=  3412709
+
+Condition sleep_100ms: sleep_s=0.1 (estimated >=19.9s)
+  [sleep_100ms]   1/200  gpu_delta_raw=     12333  cpu_wait_ns=    254333
+  [sleep_100ms]  50/200  gpu_delta_raw=     14708  cpu_wait_ns=    839375
+  [sleep_100ms] 100/200  gpu_delta_raw=     15958  cpu_wait_ns=    849584
+  [sleep_100ms] 150/200  gpu_delta_raw=     15209  cpu_wait_ns=    689583
+  [sleep_100ms] 200/200  gpu_delta_raw=     19583  cpu_wait_ns=   1121167
+  wrote 20260427T134031-sleep_100ms.csv
+
+  sleep_100ms (N=200)
+    gpu_delta_raw: min=    7208  p05=   10873  p50=   13791  p95=   19711  p99=  133210  max=   409834
+                   cv(stddev/p50)=2.2286  in_floor[8000,8200]=0/200
+    cpu_wait_ns:   min=  238625  p05=  417306  p50=  803084  p95= 2090102  p99= 2874797  max=  4682333
+
+Condition sleep_1s: sleep_s=1.0 (estimated >=199.0s)
+  [sleep_1s]   1/200  gpu_delta_raw=     14208  cpu_wait_ns=    669375
+  [sleep_1s]  50/200  gpu_delta_raw=     18791  cpu_wait_ns=   2029375
+  [sleep_1s] 100/200  gpu_delta_raw=     14916  cpu_wait_ns=   1875167
+  [sleep_1s] 150/200  gpu_delta_raw=     19166  cpu_wait_ns=   2150625
+  [sleep_1s] 200/200  gpu_delta_raw=     13833  cpu_wait_ns=    832833
+  wrote 20260427T134031-sleep_1s.csv
+
+  sleep_1s (N=200)
+    gpu_delta_raw: min=   10333  p05=   13125  p50=   15229  p95=   20252  p99=   21083  max=    48250
+                   cv(stddev/p50)=0.2124  in_floor[8000,8200]=0/200
+    cpu_wait_ns:   min=  419708  p05=  723732  p50= 1882666  p95= 2514224  p99= 2886739  max=  5710750
+
+timestamp correlation (end):   cpu=130385643835458  gpu=130385643835458
+elapsed cpu_ticks=224134999625  gpu_ticks=224134999625  ratio_gpu/cpu=1.000000
+total wall-clock: 224.1s
+
+wrote 20260427T134031-meta.txt
+
+Done.

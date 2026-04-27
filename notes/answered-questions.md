@@ -42,6 +42,40 @@ needed.
 **Hardware/software:** Apple M1 Pro 16GB, macOS 26.3.1, PyObjC.
 **Closed by:** experiment 001.
 
+## What is the noise floor (σ/μ) of MTLCounterSampleBuffer timing on M1 Pro?
+
+**Answer:** It is *not* a single number — it depends sharply on how
+much idle time sits between consecutive dispatches. For the trivial
+`write_tid` kernel (32 threads, 1 SIMD width) on M1 Pro with macOS
+26.3.1 at user-interactive QoS on AC power:
+
+| inter-dispatch sleep | median gpu_delta_raw (ns) | cv (σ/p50) |
+|----------------------|---------------------------|------------|
+| 0                    | 8083                      | 0.66       |
+| 1 ms                 | 8291                      | **7.03**   |
+| 10 ms                | 11292                     | 2.71       |
+| 100 ms               | 13791                     | 2.23       |
+| 1 s                  | 15229                     | **0.21**   |
+
+The non-monotonic cv is the headline. The 1 ms condition is by far the
+worst — bimodal with most dispatches near the back-to-back floor and
+~5/200 dispatches taking 30–80x longer because the GPU is in a
+transition zone of its power-state machine. The 1 s condition is by
+far the *best* (tightest distribution), even though the absolute median
+is highest. "More idle = more noise" is wrong; "more idle = different
+power state, possibly tighter" is right.
+
+**Practical consequence:** any microbench design must explicitly choose
+its cadence and inherit that cadence's noise structure. There is no
+"pin to one frequency" workaround on Apple Silicon. The 1–10 ms range
+is poison and should be avoided unless characterizing it is the point.
+
+**Hardware/software:** Apple M1 Pro 16GB, macOS 26.3.1, AC power,
+laptop awake, no other heavy processes.
+**Closed by:** experiment 002.
+**Still open for:** how this scales with kernel duration / size / load,
+and whether the same picture holds on M4 Max.
+
 ## What is the GPU timestamp counter's hardware tick resolution on M1 Pro?
 
 **Answer:** ~24 MHz (one tick ≈ 41.67 ns). Apparent in 001's back-to-back

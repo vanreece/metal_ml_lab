@@ -10,13 +10,21 @@ answer and a link to the experiment that closed it, then moves to
 
 ## Foundational (everything depends on these)
 
-- What is the noise floor (σ/μ) of `MTLCounterSampleBuffer` timestamp-based
-  timing on M1 Pro under user-interactive QoS, AC power, no thermal
-  pressure?
+- ~~What is the noise floor (σ/μ) of `MTLCounterSampleBuffer`
+  timestamp-based timing on M1 Pro under user-interactive QoS, AC power,
+  no thermal pressure?~~ **Substantively answered by 002 for the
+  trivial 32-thread `write_tid` kernel:** cv depends sharply on
+  inter-dispatch idle. cv ≈ 0.66 at sleep=0 (dominated by quantization +
+  rare outlier), 7.0 at sleep=1ms (bimodal, nightmare zone), 2.7 at
+  sleep=10ms, 2.2 at sleep=100ms, 0.21 at sleep=1s. The right answer
+  to "what is the noise floor" is "depends entirely on what cadence
+  you operate at." See `notes/answered-questions.md`. Still open: how
+  this scales with kernel size and load.
 - What is the smallest kernel duration we can reliably distinguish from
-  noise? (Partial answer from 001: timestamp tick is ~42 ns on M1 Pro;
-  per-dispatch floor is ~8 µs. "Reliably distinguish from noise" still
-  pending characterization — that is 002.)
+  noise? (Partial answer from 001+002: timestamp tick is ~42 ns on M1
+  Pro; per-dispatch floor is ~8 µs at sleep=0 with cv dominated by
+  quantization. "Reliably distinguish from noise" depends on cadence —
+  see 002. Still open: how this changes with kernel size.)
 - ~~Does `device.supportsCounterSampling(at:)` return useful values for
   any sampling point besides `atStageBoundary` on M-series?~~ **Answered
   by 001 on M1 Pro / macOS 26.3.1: no.** `atDraw`, `atBlit`, `atDispatch`,

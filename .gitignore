@@ -9,6 +9,9 @@ venv/
 .idea/
 *.swp
 
+# Per-checkout agent harness state
+.claude/
+
 # OS
 .DS_Store
 
