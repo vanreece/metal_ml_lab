@@ -96,6 +96,15 @@ prevent retrofitting after the fact:
   used so far. Same shared-buffer pattern as 001/002.
 - Anything about thermal effects. Run is short enough that thermals
   should not move materially.
+- **Whether display sleep / dim state changes any of this.** Flagged
+  before the run as a plausible confound — WindowServer shares the GPU,
+  and the system's power posture changes when the display sleeps. This
+  experiment *controls* display state (caffeinate -d -i -m runs as a
+  sidecar throughout, holding display awake and preventing idle sleep),
+  records `IODisplayWrangler` powerstate at start and end, and records
+  the full `pmset -g assertions` output for later auditing. Whether
+  display state is itself a variable that matters is the question for
+  a small follow-up after 003.
 
 ## Setup
 
@@ -106,6 +115,10 @@ prevent retrofitting after the fact:
 - User-interactive QoS via `pthread_set_qos_class_self_np`.
 - uv + PEP 723 inline metadata, same as 001/002.
 - Same one-shared-sample-buffer-per-condition pattern as 002.
+- `caffeinate -d -i -m` sidecar holds display awake and prevents idle
+  sleep for the duration of the run. Display power state (`pmset -g
+  powerstate IODisplayWrangler`) recorded at start and end; full
+  `pmset -g assertions` recorded at start.
 
 ### Variables
 
@@ -152,6 +165,10 @@ prevent retrofitting after the fact:
   prints clear instructions, sets `pm_proc=None`, and proceeds without
   the sidecar. The metadata file will record whether powermetrics ran.
 - Pre-run instruction printed to user: `sudo -v` first, then run.
+- A `EXP003_NO_POWERMETRICS=1` env var bypasses the powermetrics
+  attempt entirely. Used when the run is intentionally pure-Python
+  and we don't want a sudo session involved at all. Recorded in the
+  metadata file so the absence is explicit, not silent.
 
 ### What we record
 
