@@ -1,0 +1,27 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+
+# Python tooling
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# We DO commit raw experiment data by default. If a specific experiment
+# generates files too large for git, add a path-specific ignore here AND
+# document what's missing in that experiment's README.
