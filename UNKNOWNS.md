@@ -20,11 +20,34 @@ answer and a link to the experiment that closed it, then moves to
   to "what is the noise floor" is "depends entirely on what cadence
   you operate at." See `notes/answered-questions.md`. Still open: how
   this scales with kernel size and load.
+  **Updated by 003:** at long cadences (≥10 ms), a single untimed
+  warmup dispatch right before the measurement collapses cv back to
+  ≈ 0.06 — the cool-cadence noise is recoverable. The 1-10 ms
+  "transition zone" from 002 may be similarly recoverable, but
+  003's calibration probe contaminated the K=0 baseline so we can
+  not directly test that here.
 - What is the smallest kernel duration we can reliably distinguish from
   noise? (Partial answer from 001+002: timestamp tick is ~42 ns on M1
   Pro; per-dispatch floor is ~8 µs at sleep=0 with cv dominated by
   quantization. "Reliably distinguish from noise" depends on cadence —
-  see 002. Still open: how this changes with kernel size.)
+  see 002. **Updated by 003:** the floor is not even 8 µs — under
+  specific entry conditions hit accidentally at script start, the
+  same kernel ran in ~5.4 µs with cv=0.05. There is at least one
+  faster settled state than 001/002 ever observed. Reproducibility
+  of this state is the highest-priority unknown right now.)
+- **NEW from 003: What entry conditions reach the ~5.4 µs settled
+  state?** Observed once, at the very first combo of 003: cold script
+  start + caffeinate launch + 1s cooldown + 10-dispatch calibration
+  burst → all 40 subsequent measured dispatches at p50=5375 ns. Never
+  reproduced anywhere else in the same run. Until this is reproduced,
+  every "fastest possible" timing claim has a footnote.
+- **NEW from 003: Does the calibration kernel as thermometer have
+  enough resolution to distinguish power states without disturbing
+  them?** Partial answer: a 10-dispatch probe can tell hot vs cool
+  reliably (median-of-tail), but a single probe is too noisy. And the
+  10-dispatch probe is itself a 10-dispatch warmup, so observation
+  affects state. Still open: probe designs that minimize
+  observer-effect.
 - ~~Does `device.supportsCounterSampling(at:)` return useful values for
   any sampling point besides `atStageBoundary` on M-series?~~ **Answered
   by 001 on M1 Pro / macOS 26.3.1: no.** `atDraw`, `atBlit`, `atDispatch`,

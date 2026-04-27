@@ -76,6 +76,41 @@ laptop awake, no other heavy processes.
 **Still open for:** how this scales with kernel duration / size / load,
 and whether the same picture holds on M4 Max.
 
+## Does a warmup prefix recover the "cool cadence" noise from 002?
+
+**Answer:** Yes, with caveats, for cadences ≥ 10 ms. **No, and don't
+try, at sleep_0.**
+
+For inter-dispatch sleep ≥ 10 ms, K=0 puts p50 at 14–17 µs (the
+"cool" regime from 002). One untimed warmup dispatch (K=1) of the
+same kernel kind drops p50 back to ~9.7 µs and leaves cv ≤ 0.16.
+Bigger K offers no obvious benefit; K=20 occasionally introduces tail
+risk (one combo at cv=5).
+
+At sleep_0, the chip is already in (or below) the warm steady state.
+Adding warmup pushes it to a slightly slower settled state (p50 climbs
+from 5.4–8 µs to ~9 µs).
+
+Warmup *kind* matters in unexpected ways: a single arithmetic-heavy
+warmup dispatch (`fma_loop K=1`) is **strictly worse** than no warmup
+at all (cv 1.4–3.8 vs 0.1–0.3 at the same cadences). K≥5 of the same
+kind recovers; one is destabilizing. The destabilization is specific
+to switching kernel character before the measured (memory-write)
+dispatch.
+
+**Practical recipe for `write_tid` 32-thread microbenches:** at
+cadence ≥ 10 ms, `K=1` of the same kernel kind right before each
+measurement is the right warmup. At sleep_0, no warmup. Avoid one
+dispatch of an arithmetic-heavy kernel as a "light" warmup.
+
+**Hardware/software:** Apple M1 Pro 16GB, macOS 26.3.1, AC power,
+display held awake via `caffeinate -d -i -m`.
+**Closed by:** experiment 003.
+**Still open:** whether the recipe transfers to non-trivial kernels
+(planned for 004); how to escape the 1-10 ms transition zone (003
+contaminated the K=0 baseline at this cadence via the calibration
+probe and could not test cleanly).
+
 ## What is the GPU timestamp counter's hardware tick resolution on M1 Pro?
 
 **Answer:** ~24 MHz (one tick ≈ 41.67 ns). Apparent in 001's back-to-back

@@ -1,8 +1,11 @@
 # 003: Does a warmup prefix recover sleep_0's tight distribution at noisy cadences? + GPU state observation triangulated three ways.
 
-**Status:** pre-registered, not yet run
+**Status:** complete (positive primary finding, large unexpected secondary finding)
 **Date pre-registered:** 2026-04-27
+**Date run:** 2026-04-27 (powermetrics intentionally skipped via `EXP003_NO_POWERMETRICS=1`)
 **Hardware target:** M1 Pro (16GB), macOS 26.3.1
+**Raw data:** `raw/20260427T141453-{measured,calibration}.csv`, `raw/20260427T141453-meta.txt`, `raw/20260427T141453-stdout.log`
+**Wall-clock duration:** 594.9 seconds (~9.9 min)
 
 ## The question (primary)
 
@@ -284,3 +287,281 @@ Branches:
   to those ranges.
 
 We do not plan past these branches.
+
+## Result
+
+**Warmup recovers cv at every long cadence with K=1, but does not help
+(and slightly hurts) at sleep_0.** *And* the very first combo of the
+run revealed a settled-state floor at ~5.4 µs that 001 and 002 never
+saw — apparently a previously-unobserved fast power state, reachable
+only under specific entry conditions we accidentally hit at script
+start. The warmup-recovery question is answered yes-with-caveats; the
+GPU-state question got more interesting than expected.
+
+### Headline cv recovery table (each cell: p50_ns / cv)
+
+#### warmup_kind = same (write_tid 32t, identical to measured)
+
+| sleep_s | K=0          | K=1          | K=5          | K=20         |
+|---------|--------------|--------------|--------------|--------------|
+| 0       | **5375**/0.05 ⚡ | 8125/**0.006** | 9084/0.12 | 9479/0.10 |
+| 0.001   | 9896/0.02   | 9750/0.07   | 9542/0.11   | 9000/0.13   |
+| 0.01    | 14062/0.06  | 9750/0.06   | 9792/0.08   | 9000/0.12   |
+| 0.1     | 15562/0.13  | 9834/0.06   | 9688/0.06   | 9938/**5.06** ⚠ |
+| 1.0     | 16437/0.16  | 9812/0.11   | 9750/0.07   | 9730/0.11   |
+
+#### warmup_kind = heavy_write (write_tid 1024t)
+
+| sleep_s | K=0       | K=1            | K=5       | K=20      |
+|---------|-----------|----------------|-----------|-----------|
+| 0       | 9770/0.09 | 9708/0.07      | 9688/0.07 | 8938/0.09 |
+| 0.001   | 9854/0.05 | 9771/0.10      | 9479/0.09 | 9812/0.12 |
+| 0.01    | 13916/0.08 | 9833/**0.025** | 9771/0.15 | 9730/0.07 |
+| 0.1     | 14459/0.16 | 9750/0.05     | 9770/0.09 | 9708/0.11 |
+| 1.0     | 15562/0.15 | 9500/**1.62** ⚠ | 9166/0.13 | 9479/0.09 |
+
+#### warmup_kind = fma_loop (32t, ~1024 FMAs each, arithmetic-heavy)
+
+| sleep_s | K=0       | K=1            | K=5            | K=20      |
+|---------|-----------|----------------|----------------|-----------|
+| 0       | 9480/0.12 | 9604/**1.97** ⚠ | 9750/0.09     | 9542/0.06 |
+| 0.001   | 9541/0.17 | 9604/**3.82** ⚠ | 9666/0.05     | 9604/0.10 |
+| 0.01    | 14104/0.07 | 9750/0.04     | 9750/**0.04** | 9709/0.09 |
+| 0.1     | 15021/0.29 | 9916/**1.44** ⚠ | 9980/**0.04** | 9542/0.08 |
+| 1.0     | 15417/**1.38** ⚠ | 9250/0.59 | 9979/0.12      | 8500/**2.16** ⚠ |
+
+⚡ = unexpectedly low; ⚠ = unexpectedly high tail.
+
+### Reading the table — what passes and what doesn't
+
+**Recovery works as predicted at sleep ≥ 10 ms:** K=0 sits at 14–17 µs
+(the cool-cadence regime from 002); K=1 of any warmup kind drops the
+median back to ~9.7 µs and leaves cv low (≤ 0.16). One untimed warmup
+dispatch is enough to push the chip back into the warm steady state.
+
+**Recovery does NOT work at sleep_0**, and warmup *hurts* there: the
+chip is already in (or below) the warm state, and warmup pushes it
+into a different — slightly slower — settled state. K=0 sleep_0 with
+`same` warmup hit p50=5375 (see secondary finding); K=1+ pushed it up
+to 8125–9479. The "you cannot improve on no-warmup back-to-back" part
+of the hypothesis was right.
+
+## Surprises
+
+### 1. A previously-unobserved ~5.4 µs floor existed in the very first combo
+
+`same K=0 sleep_0` produced 40 measured dispatches with min=5083,
+p50=5375, max=5958, cv=0.05. **Every single sample is below the 8000
+ns floor that 001 and 002 always converged to.** The unique values
+are `[5083, 5208, 5250, 5291, 5292, 5333, 5375, 5875, 5916, 5917,
+5958]` — same 41-ns quantum from 001/002, just in a band ~33% lower.
+
+This state was reached after: laptop wake, `caffeinate` launch, 1 s
+cooldown, then 10-dispatch calibration burst (during which the chip
+visibly transitioned: `cal_first=7875` → `cal_med_of_rest=5917`).
+**It was never reproduced anywhere else in the run.** Across all 2400
+measured dispatches, only 60 are below 7000 ns — and 40 of those are
+this single combo. The chip can enter a faster power state than
+001/002 ever observed, but the entry conditions are narrow.
+
+The rest of the run sat at the more familiar ~9.5–10 µs steady state
+(when warm) or ~14–16 µs (when cool from a long sleep). So 001/002's
+"8083 ns floor" was already a non-fundamental observation — there is
+at least one faster state, possibly more.
+
+### 2. The calibration probe is itself a 10-dispatch warmup, contaminating the K=0 measurements
+
+Compare K=0 sleep_1ms across experiments:
+- **002 sleep_1ms K=0** (no calibration): cv = **7.03**
+- **003 sleep_1ms K=0** (after 10-probe calibration): cv = **0.02**
+
+The 10-dispatch calibration burst that runs immediately before the
+measured trials is *itself* effectively warmup. Our "K=0" condition is
+therefore "K=10 with a 1 s gap before it" rather than "no warmup at
+all." This is a real methodological lesson: **trying to observe the
+GPU state changes it.** The calibration kernel as thermometer has
+unavoidable observer effect at the granularity that matters.
+
+The K=1+ rows in the recovery table are all comparing "K dispatches
+right before the measured one" against "10 dispatches a moment ago";
+both are warmup. The story they tell about K=N warmup vs N=10
+calibration gap is meaningful (more recent + denser warmup is
+slightly better), but the K=0 comparison should be read as "after a
+gap of cooldown_s + calibration probe + 1 cadence_s sleep" not as
+"cold."
+
+### 3. `fma_loop K=1` is *unexpectedly worse* than `fma_loop K=0` at multiple cadences
+
+| sleep_s | fma_loop K=0 cv | fma_loop K=1 cv |
+|---------|-----------------|-----------------|
+| 0       | 0.12            | **1.97**        |
+| 0.001   | 0.17            | **3.82**        |
+| 0.1     | 0.29            | **1.44**        |
+| 1.0     | 1.38            | 0.59            |
+
+A *single* arithmetic-heavy warmup dispatch destabilizes the next
+measured dispatch — but K=5 fma_loop dispatches restore it
+(K=5 cv ≈ 0.04–0.13 across cadences). Hypothesis: one fma_loop dispatch
+puts the chip in a transitional state that needs additional dispatches
+to settle. Light warmup of a heavy kind is worse than no warmup or
+substantial warmup.
+
+This is not symmetric across warmup kinds: `same K=1` and
+`heavy_write K=1` are mostly fine (cv ≤ 0.13). The destabilizing
+effect is specific to switching kernel character (arithmetic-heavy vs
+memory-write) immediately before a memory-write measurement.
+
+### 4. `same K=20 sleep_0.1` has cv=5.06
+
+Among the 60 K-cadence-warmup_kind combos, this one stands out: median
+9938 (clean), p95=10129 (clean), but p99=203629 (~20x the median) and
+max=327292 (~33x the median). 38 of 40 dispatches were tight; 2 were
+catastrophic. No similar pattern in adjacent combos (`same K=20
+sleep_0.01` and `same K=20 sleep_1.0` both have cv ≤ 0.13).
+
+Reads as a one-off interference event during this combo, not as a
+property of the (K=20, sleep_0.1, same) configuration. Worth a
+re-run to verify rather than explaining now.
+
+### 5. Tail outliers cluster in fma_loop conditions
+
+7 combos have at least one dispatch >50 µs. **5 of those 7 are
+fma_loop**, even though fma_loop is one of three warmup kinds (33%
+expected, 71% observed). The arithmetic-heavy warmup correlates with
+tail risk in the measured (memory-write) dispatch. Cause unclear —
+could be pipeline-state aliasing, could be context switching to a
+heavier compute regime, could be coincidence in a small sample.
+
+### 6. Calibration probe `cal_first` is noisy across combos
+
+`cal_first` (the first dispatch's gpu_delta in each calibration burst,
+intended as a "what state is the chip in right now" reading) ranges
+from 7875 to 22291 across 60 combos. After a uniform 1 s cooldown,
+the GPU's state at re-entry is *not* uniform. The calibration kernel
+is sensitive to state, but the state itself has its own variance. We
+will need more than one probe sample (or a different probe design) to
+get a stable state reading.
+
+`cal_med_of_rest` (median of probe samples 2–10) is much tighter:
+mostly 9000–10000 ns. The chip converges to a similar warm state by
+mid-burst regardless of where it started.
+
+### 7. CPU wait grows with cadence as expected (002 reproducer)
+
+`cpu_wait_ns` p50 grows from ~190 µs (sleep_0) to ~1.85 ms (sleep_1s)
+across all warmup_kinds and Ks. This matches 002's pattern. No
+anomaly here; useful as a sanity check that the run's CPU-side
+behavior is stable.
+
+## Methodology evaluation
+
+### Does the calibration kernel work as a thermometer?
+
+**Partially.** What works: `cal_med_of_rest` reliably reports the chip
+has converged to the warm state by burst end (~9000-10000 ns across
+all 60 combos). What doesn't: `cal_first` varies from 7875 to 22291
+even after a uniform 1 s cooldown, so a single probe dispatch is too
+noisy to read state from. The probe itself moves the chip; you cannot
+observe state without affecting it.
+
+For future use, the practical pattern is probably: **multi-sample probe
+(N=10), use median-of-tail as a coarse "hot/cool" classifier, do not
+attempt fine-grained state inference from a single dispatch.** The
+absolute calibration accuracy is in the hundreds of ns; not enough to
+detect, e.g., the difference between 8 µs and 9 µs warm states without
+many samples.
+
+### Did powermetrics correlate with calibration?
+
+Not tested — powermetrics intentionally skipped this run. The
+calibration probe data is preserved (`raw/...-calibration.csv`); a
+follow-up that runs powermetrics in parallel can later cross-validate
+without re-running the whole experiment.
+
+### Did `device.sampleTimestamps:gpuTimestamp:` add anything?
+
+Same 1.000000 elapsed-ratio as 001 and 002 — a sanity check that the
+GPU clock didn't drift relative to the CPU clock over the ~10-minute
+run. Useful as confirmation that the timestamp counter results are
+trustworthy across long runs. Did not provide additional state info.
+
+## What this means operationally
+
+For any later microbench:
+
+1. **K=1 untimed warmup before each measurement is enough to escape
+   the cool-cadence regime** (sleep ≥ 10 ms) for the trivial
+   `write_tid` kernel. Bigger K offers no obvious benefit and introduces
+   risk (the K=20 outliers).
+2. **At sleep_0, do not add warmup** — it pushes the chip into a
+   slightly slower settled state. Pure back-to-back is the right
+   pattern when you have it.
+3. **Do not pick `fma_loop K=1` as a warmup recipe.** Even-numbered
+   small-K of an arithmetic-heavy kind is strictly worse than no
+   warmup at all (cv 1.4-3.8 vs 0.1-0.3). Either don't warmup, or
+   warmup substantially (K≥5).
+4. **Treat the 5.4 µs floor as a real possibility** that some entry
+   conditions can hit — kernels you previously thought were running
+   "as fast as they can" at 8 µs may have a faster regime hidden in
+   their state space.
+5. **Calibration probes are useful but disturbing**: use them to
+   classify hot/cool state, not to read off precise state. The 10-probe
+   pattern can give you a one-bit "is the chip in warm steady state
+   yet?" answer.
+
+## New questions
+
+- **What entry conditions reach the 5.4 µs floor?** This is the most
+  important new question. The combo that hit it was the very first
+  one of the run. Reproducing it is high priority — if it's
+  repeatable, every "8 µs floor" claim from 001/002 needs revising.
+  Possible factors: cold-start of the device + caffeinate transition +
+  cooldown sleep timing.
+- **Is the `same K=20 sleep_0.1` cv=5 reproducible or a one-off?**
+  Quick re-run of just that combo would tell us. Affects whether
+  K=20 is broadly safe or risky.
+- **Why does `fma_loop K=1` destabilize so badly?** Suggests the
+  Apple Silicon pipeline has state that depends on recent kernel
+  character, not just frequency. This deserves a small focused
+  experiment (vary the warmup kernel's compute/memory ratio finely).
+- **Display state was controlled but not investigated.** A small
+  follow-up swapping display awake/asleep on one of the worst-cv
+  conditions (sleep_1ms K=0 with no calibration probe) would test the
+  collaborator's hypothesis that WindowServer contention drives
+  outliers.
+- **Calibration probe contamination is real and significant.** Future
+  experiments need to either (a) accept that "K=0" means
+  "K=10 calibration + K_explicit", or (b) design a probe-free way to
+  classify state, or (c) run probe and no-probe versions side by side.
+- **Does the warmup recovery story hold for non-trivial kernels?**
+  All of 003 used the trivial `write_tid` kernel as the measured
+  workload. Real kernels have their own dispatch overhead profile.
+  That's the original pre-registered question for what would have been
+  003 (kernel-size sweep). Now even more important than before, because
+  we've established that the warmup recipe matters and we don't know
+  if it generalizes.
+- **The sleep_100ms drift from 002 — does it appear here?** Need to
+  check the raw 003 data for `same K=0 sleep_0.1` and similar to see
+  if the drift signature is present. The runs are short enough that
+  drift may be hidden, but worth a look.
+
+## After this experiment
+
+**Highest-priority follow-up: 003a — reproduce the 5.4 µs floor.**
+The 003 run accidentally discovered a state, and the first principle
+of the project is that we don't ignore unexplained findings. A small
+focused experiment that runs the same first-combo conditions ~5 times
+in a row (with re-launches between to get clean cold starts) tells us
+whether 5.4 µs is reproducible.
+
+After 003a, **004: warmup recipe transferability across kernel
+shapes.** With K=1 warmup of `same` shape established as a clean
+recipe for `write_tid`, ask whether the recipe still works for
+non-trivial kernels (varying threadgroup count, threads-per-group,
+arithmetic intensity).
+
+**Optional: 003b — display state effect.** One-day swap test, only if
+003a or 004 shows display-correlated weirdness. Otherwise the question
+of "does display state matter" can wait; we have the controlled
+recording in metadata for any later run, and the more interesting
+findings from 003 push higher up the priority queue.

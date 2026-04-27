@@ -1,0 +1,344 @@
+==============================================================================
+Experiment 003: warmup recovery + GPU state observation
+==============================================================================
+QoS:   pthread_set_qos_class_self_np -> 0
+Power: Now drawing from 'AC Power'
+Display powerstate (start):
+  Driver ID  Current State  Max State  Current State Description
+Internal failure: Failed to get power state information
+pmset assertions (start, first 10 lines):
+  2026-04-27 14:14:53 -0700 
+  Assertion status system-wide:
+     BackgroundTask                 0
+     ApplePushServiceTask           0
+     UserIsActive                   1
+     PreventUserIdleDisplaySleep    0
+     SoftwareUpdateTask             0
+     PreventSystemSleep             0
+     ExternalMedia                  0
+     PreventUserIdleSystemSleep     1
+caffeinate: started pid=47437
+powermetrics: skipped (EXP003_NO_POWERMETRICS set)
+Device: Apple M1 Pro  registryID=4294969592
+sample_buffer slots=100, out_buffer bytes=4096
+Conditions: warmup_kinds=['same', 'heavy_write', 'fma_loop']  K=[0, 1, 5, 20]  sleep_s=[0.0, 0.001, 0.01, 0.1, 1.0]  N=40
+timestamp correlation (start): cpu=132223837063041 gpu=132223837063041
+
+=== Warmup kind: same (kernel=write_tid, threads=32, group=32) ===
+
+  Combo: same K=0 sleep_s=0.0
+    cal_probe: first=7875 med_of_rest=5917
+    measured (N=40): min=5083 p05=5248 p50=5375 p95=5958 p99=5958 max=5958
+               cv=0.0529  in_floor=0/40  cpu_wait p50=190146
+
+  Combo: same K=1 sleep_s=0.0
+    cal_probe: first=11542 med_of_rest=8125
+    measured (N=40): min=7958 p05=8083 p50=8125 p95=8209 p99=8209 max=8209
+               cv=0.0062  in_floor=31/40  cpu_wait p50=204750
+
+  Combo: same K=5 sleep_s=0.0
+    cal_probe: first=18125 med_of_rest=9666
+    measured (N=40): min=8417 p05=8538 p50=9084 p95=12267 p99=12635 max=12667
+               cv=0.1223  in_floor=0/40  cpu_wait p50=284896
+
+  Combo: same K=20 sleep_s=0.0
+    cal_probe: first=13458 med_of_rest=9000
+    measured (N=40): min=8375 p05=8458 p50=9479 p95=10202 p99=12637 max=12750
+               cv=0.0963  in_floor=0/40  cpu_wait p50=291584
+
+  Combo: same K=0 sleep_s=0.001
+    cal_probe: first=21458 med_of_rest=9875
+    measured (N=40): min=9458 p05=9459 p50=9896 p95=10042 p99=10398 max=10625
+               cv=0.0236  in_floor=0/40  cpu_wait p50=328562
+
+  Combo: same K=1 sleep_s=0.001
+    cal_probe: first=14792 med_of_rest=9667
+    measured (N=40): min=8417 p05=8617 p50=9750 p95=10356 p99=11402 max=11792
+               cv=0.0675  in_floor=0/40  cpu_wait p50=314229
+
+  Combo: same K=5 sleep_s=0.001
+    cal_probe: first=20125 med_of_rest=9792
+    measured (N=40): min=8417 p05=8584 p50=9542 p95=12065 p99=12703 max=12833
+               cv=0.1075  in_floor=0/40  cpu_wait p50=279480
+
+  Combo: same K=20 sleep_s=0.001
+    cal_probe: first=21667 med_of_rest=9916
+    measured (N=40): min=8416 p05=8540 p50=9000 p95=12229 p99=13006 max=13250
+               cv=0.1292  in_floor=0/40  cpu_wait p50=267500
+
+  Combo: same K=0 sleep_s=0.01
+    cal_probe: first=14917 med_of_rest=9500
+    measured (N=40): min=9833 p05=12819 p50=14062 p95=14462 p99=15380 max=15917
+               cv=0.0643  in_floor=0/40  cpu_wait p50=828542
+
+  Combo: same K=1 sleep_s=0.01
+    cal_probe: first=16292 med_of_rest=9166
+    measured (N=40): min=8583 p05=8709 p50=9750 p95=10091 p99=11394 max=12125
+               cv=0.0600  in_floor=0/40  cpu_wait p50=331583
+
+  Combo: same K=5 sleep_s=0.01
+    cal_probe: first=21084 med_of_rest=9458
+    measured (N=40): min=8416 p05=8696 p50=9792 p95=10046 p99=11726 max=12750
+               cv=0.0758  in_floor=0/40  cpu_wait p50=303937
+
+  Combo: same K=20 sleep_s=0.01
+    cal_probe: first=17833 med_of_rest=9667
+    measured (N=40): min=8292 p05=8535 p50=9000 p95=11682 p99=13026 max=13708
+               cv=0.1165  in_floor=0/40  cpu_wait p50=254792
+
+  Combo: same K=0 sleep_s=0.1
+    cal_probe: first=16125 med_of_rest=9750
+    measured (N=40): min=9500 p05=14149 p50=15562 p95=19689 p99=20608 max=20916
+               cv=0.1282  in_floor=0/40  cpu_wait p50=1849458
+
+  Combo: same K=1 sleep_s=0.1
+    cal_probe: first=15209 med_of_rest=9917
+    measured (N=40): min=6875 p05=8981 p50=9834 p95=10127 p99=10294 max=10375
+               cv=0.0577  in_floor=0/40  cpu_wait p50=367583
+
+  Combo: same K=5 sleep_s=0.1
+    cal_probe: first=20375 med_of_rest=9792
+    measured (N=40): min=8416 p05=8775 p50=9688 p95=10086 p99=11497 max=12375
+               cv=0.0639  in_floor=0/40  cpu_wait p50=315438
+
+  Combo: same K=20 sleep_s=0.1
+    cal_probe: first=16666 med_of_rest=9917
+    measured (N=40): min=6208 p05=8382 p50=9938 p95=10129 p99=203629 max=327292
+               cv=5.0564  in_floor=0/40  cpu_wait p50=280354
+
+  Combo: same K=0 sleep_s=1.0
+    cal_probe: first=21000 med_of_rest=6958
+    measured (N=40): min=6833 p05=13354 p50=16437 p95=20843 p99=21295 max=21458
+               cv=0.1640  in_floor=0/40  cpu_wait p50=925042
+
+  Combo: same K=1 sleep_s=1.0
+    cal_probe: first=15500 med_of_rest=8875
+    measured (N=40): min=4833 p05=8924 p50=9812 p95=10041 p99=12558 max=14167
+               cv=0.1127  in_floor=0/40  cpu_wait p50=367604
+
+  Combo: same K=5 sleep_s=1.0
+    cal_probe: first=17542 med_of_rest=9875
+    measured (N=40): min=7042 p05=8535 p50=9750 p95=10169 p99=11402 max=12166
+               cv=0.0730  in_floor=0/40  cpu_wait p50=327167
+
+  Combo: same K=20 sleep_s=1.0
+    cal_probe: first=17166 med_of_rest=9917
+    measured (N=40): min=4750 p05=8446 p50=9730 p95=10107 p99=11863 max=12708
+               cv=0.1092  in_floor=0/40  cpu_wait p50=295396
+
+=== Warmup kind: heavy_write (kernel=write_tid, threads=1024, group=32) ===
+
+  Combo: heavy_write K=0 sleep_s=0.0
+    cal_probe: first=15667 med_of_rest=9916
+    measured (N=40): min=8459 p05=8700 p50=9770 p95=11846 p99=12287 max=12417
+               cv=0.0890  in_floor=0/40  cpu_wait p50=285584
+
+  Combo: heavy_write K=1 sleep_s=0.0
+    cal_probe: first=21667 med_of_rest=9834
+    measured (N=40): min=8500 p05=8709 p50=9708 p95=10176 p99=11392 max=12042
+               cv=0.0680  in_floor=0/40  cpu_wait p50=283667
+
+  Combo: heavy_write K=5 sleep_s=0.0
+    cal_probe: first=17000 med_of_rest=10041
+    measured (N=40): min=8583 p05=8702 p50=9688 p95=10105 p99=11796 max=12625
+               cv=0.0741  in_floor=0/40  cpu_wait p50=300479
+
+  Combo: heavy_write K=20 sleep_s=0.0
+    cal_probe: first=15042 med_of_rest=9458
+    measured (N=40): min=7459 p05=8532 p50=8938 p95=10056 p99=12095 max=12209
+               cv=0.0944  in_floor=0/40  cpu_wait p50=244646
+
+  Combo: heavy_write K=0 sleep_s=0.001
+    cal_probe: first=21167 med_of_rest=9833
+    measured (N=40): min=9125 p05=9539 p50=9854 p95=10041 p99=11745 max=12833
+               cv=0.0522  in_floor=0/40  cpu_wait p50=326979
+
+  Combo: heavy_write K=1 sleep_s=0.001
+    cal_probe: first=14666 med_of_rest=10000
+    measured (N=40): min=8541 p05=8786 p50=9771 p95=11858 p99=12969 max=13375
+               cv=0.1017  in_floor=0/40  cpu_wait p50=279812
+
+  Combo: heavy_write K=5 sleep_s=0.001
+    cal_probe: first=21750 med_of_rest=9833
+    measured (N=40): min=8250 p05=8496 p50=9479 p95=10192 p99=12529 max=12708
+               cv=0.0939  in_floor=0/40  cpu_wait p50=279042
+
+  Combo: heavy_write K=20 sleep_s=0.001
+    cal_probe: first=15334 med_of_rest=9834
+    measured (N=40): min=8416 p05=8540 p50=9812 p95=12381 p99=12729 max=12875
+               cv=0.1154  in_floor=0/40  cpu_wait p50=287104
+
+  Combo: heavy_write K=0 sleep_s=0.01
+    cal_probe: first=20583 med_of_rest=9916
+    measured (N=40): min=9875 p05=12948 p50=13916 p95=14381 p99=16813 max=18292
+               cv=0.0750  in_floor=0/40  cpu_wait p50=806917
+
+  Combo: heavy_write K=1 sleep_s=0.01
+    cal_probe: first=21459 med_of_rest=9791
+    measured (N=40): min=9042 p05=9437 p50=9833 p95=10042 p99=10093 max=10125
+               cv=0.0252  in_floor=0/40  cpu_wait p50=329709
+
+  Combo: heavy_write K=5 sleep_s=0.01
+    cal_probe: first=17083 med_of_rest=6584
+    measured (N=40): min=5875 p05=7732 p50=9771 p95=12489 p99=13900 max=13916
+               cv=0.1459  in_floor=0/40  cpu_wait p50=306876
+
+  Combo: heavy_write K=20 sleep_s=0.01
+    cal_probe: first=20041 med_of_rest=9750
+    measured (N=40): min=8500 p05=8746 p50=9730 p95=10194 p99=11602 max=11667
+               cv=0.0658  in_floor=0/40  cpu_wait p50=293354
+
+  Combo: heavy_write K=0 sleep_s=0.1
+    cal_probe: first=12875 med_of_rest=9500
+    measured (N=40): min=9875 p05=13083 p50=14459 p95=20839 p99=21085 max=21166
+               cv=0.1625  in_floor=0/40  cpu_wait p50=1865416
+
+  Combo: heavy_write K=1 sleep_s=0.1
+    cal_probe: first=17750 med_of_rest=9917
+    measured (N=40): min=6917 p05=9443 p50=9750 p95=9961 p99=10026 max=10042
+               cv=0.0498  in_floor=0/40  cpu_wait p50=367500
+
+  Combo: heavy_write K=5 sleep_s=0.1
+    cal_probe: first=14667 med_of_rest=9958
+    measured (N=40): min=6792 p05=8538 p50=9770 p95=10181 p99=12245 max=12375
+               cv=0.0885  in_floor=0/40  cpu_wait p50=296104
+
+  Combo: heavy_write K=20 sleep_s=0.1
+    cal_probe: first=15250 med_of_rest=9541
+    measured (N=40): min=4833 p05=8290 p50=9708 p95=10350 p99=11712 max=11875
+               cv=0.1059  in_floor=0/40  cpu_wait p50=281584
+
+  Combo: heavy_write K=0 sleep_s=1.0
+    cal_probe: first=14834 med_of_rest=9459
+    measured (N=40): min=9708 p05=11494 p50=15562 p95=20760 p99=21467 max=21792
+               cv=0.1540  in_floor=0/40  cpu_wait p50=1464270
+
+  Combo: heavy_write K=1 sleep_s=1.0
+    cal_probe: first=19917 med_of_rest=9416
+    measured (N=40): min=5625 p05=8104 p50=9500 p95=10042 p99=68576 max=106000
+               cv=1.6165  in_floor=0/40  cpu_wait p50=373271
+
+  Combo: heavy_write K=5 sleep_s=1.0
+    cal_probe: first=11875 med_of_rest=8333
+    measured (N=40): min=6708 p05=8024 p50=9166 p95=10004 p99=12726 max=14416
+               cv=0.1284  in_floor=2/40  cpu_wait p50=282812
+
+  Combo: heavy_write K=20 sleep_s=1.0
+    cal_probe: first=11500 med_of_rest=8250
+    measured (N=40): min=7792 p05=8163 p50=9479 p95=10125 p99=11040 max=11625
+               cv=0.0902  in_floor=2/40  cpu_wait p50=272146
+
+=== Warmup kind: fma_loop (kernel=fma_loop, threads=32, group=32) ===
+
+  Combo: fma_loop K=0 sleep_s=0.0
+    cal_probe: first=14333 med_of_rest=9333
+    measured (N=40): min=8292 p05=8373 p50=9480 p95=12548 p99=12666 max=12666
+               cv=0.1177  in_floor=0/40  cpu_wait p50=259708
+
+  Combo: fma_loop K=1 sleep_s=0.0
+    cal_probe: first=22291 med_of_rest=9708
+    measured (N=40): min=8250 p05=8292 p50=9604 p95=11925 p99=83889 max=129292
+               cv=1.9723  in_floor=0/40  cpu_wait p50=286625
+
+  Combo: fma_loop K=5 sleep_s=0.0
+    cal_probe: first=17167 med_of_rest=9458
+    measured (N=40): min=8250 p05=8703 p50=9750 p95=11832 p99=12964 max=13208
+               cv=0.0934  in_floor=0/40  cpu_wait p50=272896
+
+  Combo: fma_loop K=20 sleep_s=0.0
+    cal_probe: first=14209 med_of_rest=9333
+    measured (N=40): min=8250 p05=8371 p50=9542 p95=10171 p99=10326 max=10375
+               cv=0.0584  in_floor=0/40  cpu_wait p50=275792
+
+  Combo: fma_loop K=0 sleep_s=0.001
+    cal_probe: first=15083 med_of_rest=9334
+    measured (N=40): min=9166 p05=9208 p50=9541 p95=13671 p99=14462 max=14917
+               cv=0.1653  in_floor=0/40  cpu_wait p50=337042
+
+  Combo: fma_loop K=1 sleep_s=0.001
+    cal_probe: first=16042 med_of_rest=9458
+    measured (N=40): min=8292 p05=8790 p50=9604 p95=11575 p99=152486 max=241666
+               cv=3.8204  in_floor=0/40  cpu_wait p50=295417
+
+  Combo: fma_loop K=5 sleep_s=0.001
+    cal_probe: first=20375 med_of_rest=9667
+    measured (N=40): min=8250 p05=8704 p50=9666 p95=9875 p99=10816 max=11417
+               cv=0.0532  in_floor=0/40  cpu_wait p50=314521
+
+  Combo: fma_loop K=20 sleep_s=0.001
+    cal_probe: first=19875 med_of_rest=9625
+    measured (N=40): min=8416 p05=8700 p50=9604 p95=12169 p99=12691 max=13000
+               cv=0.1026  in_floor=0/40  cpu_wait p50=277104
+
+  Combo: fma_loop K=0 sleep_s=0.01
+    cal_probe: first=17000 med_of_rest=9750
+    measured (N=40): min=9959 p05=13373 p50=14104 p95=15271 p99=16023 max=16250
+               cv=0.0646  in_floor=0/40  cpu_wait p50=807646
+
+  Combo: fma_loop K=1 sleep_s=0.01
+    cal_probe: first=20167 med_of_rest=9625
+    measured (N=40): min=8542 p05=8959 p50=9750 p95=10131 p99=10504 max=10666
+               cv=0.0397  in_floor=0/40  cpu_wait p50=330479
+
+  Combo: fma_loop K=5 sleep_s=0.01
+    cal_probe: first=20334 med_of_rest=9875
+    measured (N=40): min=8750 p05=8990 p50=9750 p95=10300 p99=10585 max=10666
+               cv=0.0403  in_floor=0/40  cpu_wait p50=315416
+
+  Combo: fma_loop K=20 sleep_s=0.01
+    cal_probe: first=16208 med_of_rest=9208
+    measured (N=40): min=8292 p05=8575 p50=9709 p95=10502 p99=12837 max=13292
+               cv=0.0882  in_floor=0/40  cpu_wait p50=291479
+
+  Combo: fma_loop K=0 sleep_s=0.1
+    cal_probe: first=16792 med_of_rest=9959
+    measured (N=40): min=9917 p05=13060 p50=15021 p95=20531 p99=31571 max=38250
+               cv=0.2925  in_floor=0/40  cpu_wait p50=1883396
+
+  Combo: fma_loop K=1 sleep_s=0.1
+    cal_probe: first=14625 med_of_rest=9791
+    measured (N=40): min=8375 p05=9332 p50=9916 p95=10640 p99=65410 max=100250
+               cv=1.4413  in_floor=0/40  cpu_wait p50=366084
+
+  Combo: fma_loop K=5 sleep_s=0.1
+    cal_probe: first=15292 med_of_rest=9167
+    measured (N=40): min=8959 p05=9285 p50=9980 p95=10625 p99=10676 max=10708
+               cv=0.0407  in_floor=0/40  cpu_wait p50=317542
+
+  Combo: fma_loop K=20 sleep_s=0.1
+    cal_probe: first=15250 med_of_rest=9958
+    measured (N=40): min=6625 p05=8414 p50=9542 p95=10008 p99=11666 max=12625
+               cv=0.0831  in_floor=0/40  cpu_wait p50=303542
+
+  Combo: fma_loop K=0 sleep_s=1.0
+    cal_probe: first=16709 med_of_rest=9375
+    measured (N=40): min=9708 p05=11395 p50=15417 p95=21286 p99=99814 max=149084
+               cv=1.3755  in_floor=0/40  cpu_wait p50=1685771
+
+  Combo: fma_loop K=1 sleep_s=1.0
+    cal_probe: first=14333 med_of_rest=8792
+    measured (N=40): min=6500 p05=6957 p50=9250 p95=9923 p99=30506 max=43083
+               cv=0.5923  in_floor=5/40  cpu_wait p50=334604
+
+  Combo: fma_loop K=5 sleep_s=1.0
+    cal_probe: first=21625 med_of_rest=9625
+    measured (N=40): min=8041 p05=8167 p50=9979 p95=12236 p99=13335 max=13709
+               cv=0.1207  in_floor=3/40  cpu_wait p50=329834
+
+  Combo: fma_loop K=20 sleep_s=1.0
+    cal_probe: first=15000 med_of_rest=9875
+    measured (N=40): min=5833 p05=7998 p50=8500 p95=10743 p99=80652 max=124917
+               cv=2.1627  in_floor=8/40  cpu_wait p50=271875
+
+wrote 20260427T141453-measured.csv (2400 rows)
+wrote 20260427T141453-calibration.csv (600 rows)
+
+timestamp correlation (end):   cpu=132818776643041 gpu=132818776643041
+elapsed cpu_ticks=594939580000  gpu_ticks=594939580000  ratio_gpu/cpu=1.000000
+experiment wall-clock: 594.9s
+wrote 20260427T141453-meta.txt
+
+powermetrics: no sidecar
+caffeinate: stopped rc=-15
+
+Done.
