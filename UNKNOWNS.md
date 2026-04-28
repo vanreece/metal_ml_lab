@@ -108,8 +108,41 @@ answer and a link to the experiment that closed it, then moves to
 
 ## Generalization (only matter if methodology works)
 
-- Does any of this generalize from M1 Pro to M4 Max? (M3+ Dynamic Caching
-  changes occupancy behavior in ways the public docs don't fully describe.)
+- ~~Does any of this generalize from M1 Pro to M4 Max? (M3+ Dynamic
+  Caching changes occupancy behavior in ways the public docs don't
+  fully describe.)~~ **Partially answered (2026-04-28):** the
+  *infrastructure* generalizes — same single counter set, same single
+  sampling point, same ~24 MHz timestamp tick on M4 Max
+  (`applegpu_g16s`) / macOS 26.4.1 as on M1 Pro / 26.3.1. The *baseline
+  numbers* do not — dispatch-overhead floor dropped ~20 % on M4 Max
+  (8.0 µs → 6.4 µs at p50 for write_tid 32t back-to-back) and tail
+  behavior was dramatically tighter in the one re-run we have (max
+  25 µs vs 926 µs, 37× reduction; needs reproduction). Sub-questions
+  still open below.
+
+  **Still open on M4 Max specifically:**
+  - 002's cv-vs-cadence map and the 1-10 ms "nightmare zone" — does
+    the same bimodality / power-state-machine structure exist on
+    G16, and where? The smaller spaced/btb DVFS gap on M4 Max (1.43×
+    vs 1.82×) hints that the cadence sensitivity may be flatter.
+  - 003's K=1 warmup recipe — appropriate when the floor itself
+    moved? Re-run 003-style warmup-K sweep on M4 Max likely needed.
+  - 004's work-dominance thresholds — these almost certainly shift,
+    since M4 Max has materially higher peak FLOPS and bandwidth than
+    M1 Pro. The 32K-thread "overhead-dominated" zone and the
+    131K-262K "work-dominated" knee are M1-Pro-specific until shown
+    otherwise on G16.
+  - 004's +21 µs step at fma_loop iters 192→256 — plausibly
+    G13-specific (compiler / register-pressure threshold). May or
+    may not exist on G16, may exist at a different iter count. Worth
+    a focused re-run.
+  - 004's bimodal between-sweep variance band at fma_iters
+    8192-16384 — same comment.
+  - 005's ~42 µs inter-encoder gap — could be different on G16; the
+    front-end behavior on M4 Max appears different at the tail-
+    behavior level (above), which suggests this gap may shift too.
+  - Whether the M4 Max's apparent tighter tails reproduce across
+    multiple runs and across the macOS train.
 - Does the methodology transfer to non-MLX kernels (raw `mx.fast.metal_kernel`
   vs PyTorch MPS vs llama.cpp shaders)?
 

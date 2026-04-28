@@ -212,3 +212,100 @@ in a *huge* way (1.8x median shift between back-to-back and spaced-1s).
 something to control out. Probable shape: vary inter-dispatch sleep across
 {0, 1ms, 10ms, 100ms, 1s, 10s} and characterize the distribution at each.
 That's a separate pre-registration; this experiment is closed.
+
+---
+
+## M4 Max addendum (re-run on new hardware)
+
+**Date re-run:** 2026-04-28
+**Hardware:** Apple M4 Max 36GB, MacBook Pro 14" (Mac16,6), 14-core (10P+4E)
+**Architecture:** `applegpu_g16s` (M1 Pro was `applegpu_g13s`)
+**OS:** macOS 26.4.1 (build 25E253)
+**Raw data:** `raw/20260428T111819-{backtoback,spaced1s}.csv`,
+`raw/20260428T111819-meta.txt`, `raw/20260428T111819-stdout.log`
+
+The lab moved to M4 Max on 2026-04-28. Re-ran 001 unchanged (one small
+addition: meta file now records `device.architecture().name()` so the
+G13/G16 distinction is captured directly in raw data, not just in
+prose). Same kernel, same N=100, same back-to-back vs spaced-1s
+conditions.
+
+### What stayed identical between G13 and G16
+
+- **Counter set surface:** still one set (`timestamp`), one counter
+  (`GPUTimestamp`). No new sets exposed to the public Metal API on G16.
+  Probe details in `notes/counter-sets-on-m4-max.md`.
+- **Sampling-point support:** still only `atStageBoundary`. Per-dispatch
+  sampling is still unsupported.
+- **Timestamp tick resolution:** ~24 MHz / 41.67 ns. Raw deltas on
+  M4 Max quantize to integer multiples of ~41.67 ns just like M1 Pro
+  (6125, 6167, 6208, 6250, 6291, 6333, 6375, 6417, 6458, 6500, ...
+  diffs of 41 or 42). `6125 / 41.6667 ≈ 147.0` — clean. The "smallest
+  distinguishable GPU duration delta = ~42 ns" rule from 001 holds on
+  M4 Max.
+- **`sampleTimestamps:gpuTimestamp:` correlation:** 1.000000 across the
+  ~99 s run. Same clock, same path, same units.
+
+### What shifted between G13 and G16
+
+| metric (write_tid 32t)         | M1 Pro (g13s) | M4 Max (g16s) | delta |
+|--------------------------------|---------------|---------------|-------|
+| **back-to-back min**           | 8000          | 6125          | -23%  |
+| **back-to-back median**        | 8083          | **6417**      | -21%  |
+| back-to-back p95               | 8667          | 8131          | -6%   |
+| back-to-back max               | 925 583       | **24 667**    | -97%  |
+| spaced-1s min                  | 8209          | 6208          | -24%  |
+| **spaced-1s median**           | 14 730        | **9188**      | -38%  |
+| spaced-1s p95                  | 17 089        | 23 315        | +36%  |
+| spaced-1s max                  | 288 709       | 27 083        | -91%  |
+| spaced/btb median ratio (DVFS) | 1.82×         | **1.43×**     | smaller gap |
+
+Three real findings (numbers in **bold** above):
+
+1. **Dispatch-overhead floor on M4 Max is ~6.4 µs vs ~8.0 µs on
+   M1 Pro.** A ~20 % reduction in the per-dispatch envelope. Every
+   M1-Pro-baseline number that 001-005 anchored against the 8 µs
+   floor (work-dominance thresholds, +21 µs step duration, ~42 µs
+   inter-encoder gap, paired-ratio variance composition) needs to
+   be re-evaluated against the M4 Max floor.
+2. **The DVFS gap between back-to-back and spaced-1s is smaller on
+   M4 Max** (1.43× vs 1.82×). Either the M4 Max recovers from idle
+   faster, has flatter DVFS slopes near the cool end, or both. We
+   *did* keep getting 6.2 µs samples at the start of spaced-1s
+   dispatches, suggesting the chip didn't always cool down to a
+   distinct lower-frequency state during the 1 s gap. Worth a 002-
+   style cadence sweep on M4 Max to characterize.
+3. **Worst-case max is dramatically tighter on M4 Max** (25 µs vs
+   926 µs in back-to-back; 27 µs vs 289 µs in spaced-1s). One
+   N=100 run is not enough to lock this in — could be statistical,
+   could be macOS 26.4.1 scheduling improvements over 26.3.1, could
+   be G16 front-end behavior. But the magnitude (37× reduction in
+   back-to-back tail) is large enough to flag as a hypothesis.
+
+### What does NOT yet generalize from M1 Pro to M4 Max
+
+Nothing past 001's findings is validated for G16 yet. Specifically still
+open on M4 Max:
+
+- 002's cv-vs-cadence map and the 1-10 ms "nightmare zone" — re-run
+  needed, especially since the spaced-1s data hints at a smaller DVFS
+  gap on G16.
+- 003's K=1 warmup recipe — the right warmup may be different when the
+  floor itself moved.
+- 004's work-dominance thresholds — these almost certainly shift,
+  since M4 Max has materially higher peak FLOPS and bandwidth than
+  M1 Pro. The 32K thread "overhead-dominated" zone and the 131K-262K
+  "work-dominated" knee may not be where they were on M1 Pro.
+- 004's +21 µs step at fma_loop 192→256 — plausibly G13-specific
+  (compiler / register-pressure threshold). May or may not exist on
+  G16, may exist at a different iter count. Worth testing.
+- 004's bimodal band at fma_iters 8192-16384 — same comment.
+- 005's ~42 µs inter-encoder gap — could be different on G16.
+- 005's paired-ratio variance composition result — the conclusion
+  ("ratio cv ≥ alone cv when alone cv is near quantization floor")
+  is mathematical and chip-independent, but the specific numbers all
+  need re-running.
+
+The baseline is recalibrated. The methodology framework (decision 004's
+narrowed pair-timing scope, "raw before robust", percentile reporting)
+carries over.

@@ -293,6 +293,7 @@ def main():
         f"timestamp: {ts}\n"
         f"device: {device.name()}\n"
         f"registry_id: {device.registryID()}\n"
+        f"architecture: {device.architecture().name() if hasattr(device, 'architecture') and device.architecture() else '<unavailable>'}\n"
         f"chip: {platform.processor()}  machine: {platform.machine()}\n"
         f"os: {platform.platform()}\n"
         f"python: {sys.version.splitlines()[0]}\n"

@@ -9,7 +9,7 @@ experiment that closed it.
 
 ## Does `MTLDevice.supportsCounterSampling(at:)` return True for any sampling point besides `atStageBoundary` on M-series?
 
-**Answer:** No, on M1 Pro / macOS 26.3.1.
+**Answer:** No, on M1 Pro / macOS 26.3.1 *and* on M4 Max / macOS 26.4.1.
 
 `supportsCounterSampling_` returns:
 - `atStageBoundary`: True
@@ -18,17 +18,23 @@ experiment that closed it.
 - `atDispatchBoundary`: False
 - `atTileDispatchBoundary`: False
 
-This matches the public-docs signal but is now verified on actual hardware.
+Identical on both chips and across the 26.3.1 → 26.4.1 macOS update.
 Practical consequence: any per-dispatch timing must be done at the
 compute-pass-encoder level (one pass = one timing window) rather than
 sampling individual `dispatchThreads` calls. Multi-dispatch encoders
-cannot be timed per-dispatch.
+cannot be timed per-dispatch on either chip generation.
 
-**Hardware/software:** Apple M1 Pro 16GB, macOS 26.3.1, PyObjC via
-`pyobjc-framework-Metal`.
-**Closed by:** experiment 001.
-**Still open for:** M4 Max, future macOS versions, all other Apple Silicon
-variants.
+**Hardware/software (verified):**
+- Apple M1 Pro 16GB / `applegpu_g13s` / macOS 26.3.1, PyObjC via
+  `pyobjc-framework-Metal`.
+- Apple M4 Max 36GB / `applegpu_g16s` / macOS 26.4.1, PyObjC via
+  `pyobjc-framework-Metal`.
+
+**Closed by:** experiment 001 (M1 Pro, 2026-04-27),
+extended to M4 Max by `notes/probe-counter-sets.py` re-run + experiment
+001 re-run (2026-04-28).
+**Still open for:** future macOS versions, all other Apple Silicon
+variants (base M-series, Ultra-class, future generations).
 
 ## Can we read GPU timestamps from Python via PyObjC at all?
 
@@ -76,33 +82,38 @@ laptop awake, no other heavy processes.
 **Still open for:** how this scales with kernel duration / size / load,
 and whether the same picture holds on M4 Max.
 
-## What counter sets does Metal actually expose on M1 Pro?
+## What counter sets does Metal actually expose on M1 Pro and M4 Max?
 
-**Answer:** Exactly one — `timestamp`, with one counter inside it
-(`GPUTimestamp`). No `StageUtilization`, no `Statistic`, no per-stage
-cycle counts, no `ComputeKernelInvocations`, no occupancy. The Metal
-headers define all of these as constants and PyObjC happily exposes
-them, but the Apple GPU driver does not populate them on M1 Pro
-(`applegpu_g13s`).
+**Answer:** Exactly one on both chips — `timestamp`, with one counter
+inside it (`GPUTimestamp`). No `StageUtilization`, no `Statistic`, no
+per-stage cycle counts, no `ComputeKernelInvocations`, no occupancy.
+The Metal headers define all of these as constants and PyObjC happily
+exposes them, but the Apple GPU driver does not populate them on
+`applegpu_g13s` (M1 Pro) *or* on `applegpu_g16s` (M4 Max).
 
 This means **timing is the only "free" GPU-side signal Metal gives
-us.** Anything else (occupancy, stage activity, cycle counts) requires
-either powermetrics (sudo, sliding window, no per-kernel detail),
-Instruments / `xctrace` -> `.gputrace` (sudo, opaque format,
-reverse-engineering out of scope), or private Apple SPIs we cannot
-reach.
+us, on both M1 Pro and M4 Max.** Anything else (occupancy, stage
+activity, cycle counts) requires either powermetrics (sudo, sliding
+window, no per-kernel detail), Instruments / `xctrace` -> `.gputrace`
+(sudo, opaque format, reverse-engineering out of scope), or private
+Apple SPIs we cannot reach.
 
 The project's "without vendor-internal counters" thesis is therefore
 not a self-imposed constraint but a real architectural gap that Apple
-has chosen to keep closed in the public API.
+has chosen to keep closed in the public API across at least two
+chip generations and at least two macOS releases (26.3.1 and 26.4.1).
 
-**Hardware/software:** Apple M1 Pro 16GB (`applegpu_g13s`),
-macOS 26.3.1, PyObjC.
-**Closed by:** `notes/counter-sets-on-m1-pro.md` (probe), 2026-04-27.
-**Still open for:** M4 Max (different `applegpu_g*` arch string,
-likely different driver behavior); future macOS versions on M1 Pro
-(Apple could add support in a driver update — worth re-running the
-probe yearly).
+**Hardware/software (verified):**
+- Apple M1 Pro 16GB / `applegpu_g13s` / macOS 26.3.1, PyObjC.
+- Apple M4 Max 36GB / `applegpu_g16s` / macOS 26.4.1, PyObjC.
+
+**Closed by:** `notes/counter-sets-on-m1-pro.md` (probe) on 2026-04-27;
+extended to M4 Max by `notes/counter-sets-on-m4-max.md` (re-probe) on
+2026-04-28.
+**Still open for:** future macOS versions on either chip (Apple could
+in principle add support in a driver update — worth re-running the
+probe periodically); other Apple Silicon variants (base M-series,
+Ultra-class).
 
 ## Does a warmup prefix recover the "cool cadence" noise from 002?
 
@@ -338,21 +349,67 @@ PyObjC + `MTLCounterSamplingPointAtStageBoundary`.
 command buffers, explicit barriers, queue properties) reduce the
 gap; whether the gap differs on M4 Max.
 
-## What is the GPU timestamp counter's hardware tick resolution on M1 Pro?
+## What is the GPU timestamp counter's hardware tick resolution on M1 Pro and M4 Max?
 
-**Answer:** ~24 MHz (one tick ≈ 41.67 ns). Apparent in 001's back-to-back
-distribution as quantization at 8000, 8041, 8083, 8125, 8167, ... raw
-units. Metal's `resolveCounterRange_` returns these raw counter values
-already scaled to nanoseconds — i.e. each integer "nanosecond" we read
-is actually one of every ~42 contiguous nanoseconds. The
+**Answer:** ~24 MHz (one tick ≈ 41.67 ns) on **both** M1 Pro and M4 Max.
+Apparent in 001's back-to-back distribution as quantization at
+8000, 8041, 8083, 8125, 8167, ... raw units on M1 Pro, and 6125, 6167,
+6208, 6250, 6291, 6333, 6375, 6417, ... on M4 Max — different
+absolute floors, identical step (41 or 42 ns; min/41.6667 ≈ 147 on
+M4 Max, exact integer multiples of the tick). Metal's
+`resolveCounterRange_` returns these raw counter values already scaled
+to nanoseconds — i.e. each integer "nanosecond" we read is actually
+one of every ~42 contiguous nanoseconds. The
 `device.sampleTimestamps:gpuTimestamp:` API returns matching values
-(elapsed-ratio across 100s = 1.000000 in 001), confirming the two paths
-expose the same clock at the same granularity.
+(elapsed-ratio = 1.000000 across ~99-100 s in 001 on both chips),
+confirming the two paths expose the same clock at the same granularity.
 
 **Practical consequence:** smallest distinguishable GPU duration delta is
-~42 ns. Anything reported as a sub-42-ns delta would be impossible.
+~42 ns on both M1 Pro and M4 Max. Anything reported as a sub-42-ns
+delta would be impossible. Tick-rate-dependent reasoning (e.g. ratio
+of duration to tick to estimate cycle count) carries one-to-one between
+the two chips at this layer.
 
-**Hardware/software:** M1 Pro / macOS 26.3.1.
-**Closed by:** experiment 001.
-**Still open for:** M4 Max (likely different — newer chips have changed
-timestamp infrastructure).
+**Hardware/software (verified):**
+- Apple M1 Pro 16GB / `applegpu_g13s` / macOS 26.3.1.
+- Apple M4 Max 36GB / `applegpu_g16s` / macOS 26.4.1.
+
+**Closed by:** experiment 001 (M1 Pro, 2026-04-27); extended to M4 Max
+by experiment 001 re-run (2026-04-28).
+**Still open for:** future Apple Silicon generations (G17+ etc.) — the
+24 MHz figure could change at any chip revision; worth re-validating
+on each new family.
+
+## What is the dispatch-overhead floor on M4 Max for write_tid 32t?
+
+**Answer:** ~6.4 µs at p50 / ~6.1 µs at min, vs ~8.0 µs / ~8.0 µs on
+M1 Pro. A clean ~20 % reduction in the per-dispatch envelope from
+G13 to G16 / macOS 26.3.1 to 26.4.1.
+
+| metric (write_tid 32t back-to-back) | M1 Pro | M4 Max | delta |
+|-------------------------------------|-------:|-------:|------:|
+| min                                 |  8 000 |  6 125 |  -23% |
+| p50                                 |  8 083 |  6 417 |  -21% |
+| p95                                 |  8 667 |  8 131 |   -6% |
+| max                                 | 925 583 | 24 667 |  -97% |
+
+**Practical consequence:** every M1-Pro-baseline number that 001-005
+anchored against the 8 µs floor (work-dominance threshold thread
+counts, +21 µs step duration, ~42 µs inter-encoder gap, paired-ratio
+variance composition) needs to be re-evaluated against M4 Max's
+6.4 µs floor. The qualitative methodology framework (decision 004's
+narrowed pair-timing scope, percentile reporting, "raw before robust")
+carries over; the absolute numbers do not.
+
+**Tail behavior is dramatically tighter on M4 Max** in this single
+N=100 run: max in back-to-back was 25 µs vs 925 µs on M1 Pro (a 37×
+reduction in worst-case). One run is not enough to lock this in; it
+could be statistical, macOS 26.4 scheduler improvements over 26.3,
+or G16 front-end behavior. Flagged for revisit in 002-style re-runs.
+
+**Hardware/software:** Apple M4 Max 36GB, `applegpu_g16s`,
+macOS 26.4.1, AC power, user-interactive QoS, K=0 (no warmup).
+**Closed by:** experiment 001 re-run on 2026-04-28.
+**Still open for:** how this floor scales with cadence (002 re-run
+needed); whether the dramatic tail-tightening is reproducible across
+runs and macOS releases.
