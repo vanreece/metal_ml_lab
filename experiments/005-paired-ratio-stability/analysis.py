@@ -19,6 +19,7 @@ distribution, outlier behavior comparison (naive vs robust cv).
 from __future__ import annotations
 import csv
 import math
+import sys
 from collections import defaultdict
 from pathlib import Path
 
@@ -88,8 +89,16 @@ def load_paired(path):
 
 def main():
     raw_dir = Path(__file__).resolve().parent / "raw"
-    alone_path = next(raw_dir.glob("*-alone.csv"))
-    paired_path = next(raw_dir.glob("*-paired.csv"))
+    # Pick the most recent run by timestamp prefix so this script works
+    # across re-runs (e.g. M1 Pro 20260427 + M4 Max 20260428). Caller
+    # can override by passing a timestamp prefix as the first argument.
+    if len(sys.argv) > 1:
+        prefix = sys.argv[1]
+        alone_path = raw_dir / f"{prefix}-alone.csv"
+        paired_path = raw_dir / f"{prefix}-paired.csv"
+    else:
+        alone_path = sorted(raw_dir.glob("*-alone.csv"))[-1]
+        paired_path = sorted(raw_dir.glob("*-paired.csv"))[-1]
     print(f"loading {alone_path.name}, {paired_path.name}")
     alone_by_sweep, alone_pooled = load_alone(alone_path)
     paired_by_sweep, paired_pooled = load_paired(paired_path)

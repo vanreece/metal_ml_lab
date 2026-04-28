@@ -70,16 +70,17 @@ answer and a link to the experiment that closed it, then moves to
   untested. A 006 experiment running the same paired conditions
   twice with a 1-hour gap would close this. Decision 004's
   cross-session validity is contingent on it.
-- **NEW from 005: What sets the ~42 µs inter-encoder gap inside a
-  single MTLCommandBuffer, and can it be reduced?** Two consecutive
-  `MTLComputeCommandEncoder` passes in one cb are separated by a
-  p50 idle of ~42 µs (range 8-50 µs at p99). This is ~4× the
-  dispatch-overhead floor and means "same buffer = same chip state"
-  is approximate, not exact. Mechanism unclear: per-encoder setup
-  cost, command-list reordering, GPU front-end stall? Inspecting
-  the `MTLCommandBuffer` ordering semantics or trying alternative
-  encoding patterns (separate cbs with different ordering, command
-  buffer encoders with explicit barriers) might distinguish.
+- ~~**NEW from 005: What sets the ~42 µs inter-encoder gap inside a
+  single MTLCommandBuffer, and can it be reduced?**~~ **Partial
+  answer (2026-04-28):** the gap is **chip-specific** — on M4 Max
+  / `applegpu_g16s` / macOS 26.4.1, the same pattern produces a
+  p50 gap of **~833 ns** (50× reduction from M1 Pro's 42 µs).
+  Whatever mechanism produced the M1 Pro gap was either fixed or
+  vastly cheaper on the G16 front end. **Open:** what specifically
+  changed between G13 and G16 to collapse the gap? Curiosity
+  question more than methodology question now that we know the gap
+  is recoverable on newer hardware. Also unmeasured: G14 / G15
+  intermediate generations.
 - **NEW from 003: Does the calibration kernel as thermometer have
   enough resolution to distinguish power states without disturbing
   them?** Partial answer: a 10-dispatch probe can tell hot vs cool

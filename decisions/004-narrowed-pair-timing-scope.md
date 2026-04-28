@@ -1,8 +1,8 @@
 # 004: Narrow paired-kernel ratio timing to relative-magnitude / tail-suppression metric (supersedes 003)
 
 **Date:** 2026-04-27
-**Status:** active, supersedes decision 003
-**Confidence:** medium-high (for the within-session claims; cross-session stability is still untested)
+**Status:** active on M1 Pro, *under review on M4 Max* (see [exp 005 M4 Max addendum](../experiments/005-paired-ratio-stability/README.md) — the load-bearing variance-reduction failure was driven by the 42 µs inter-encoder gap, which collapses to ~1 µs on G16 / macOS 26.4.1 and re-enables the variance cancellation for noisy trials). Supersedes decision 003.
+**Confidence:** medium-high on M1 Pro; the M4 Max evidence may warrant a successor decision once cross-session ratio stability is validated on G16.
 
 ## Context
 

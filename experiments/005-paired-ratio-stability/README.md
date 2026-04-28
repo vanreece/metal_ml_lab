@@ -720,3 +720,211 @@ the operational consequences from above.
 
 A small `analysis.py` next to `run.py` does the pooled analysis
 used in this writeup. One-off, not a library.
+
+---
+
+## M4 Max addendum (re-run on new hardware)
+
+**Date re-run:** 2026-04-28
+**Hardware:** Apple M4 Max 36GB / `applegpu_g16s`, MacBook Pro 14"
+(Mac16,6), 14-core (10P+4E), AC power
+**OS:** macOS 26.4.1 (build 25E253)
+**Raw data:** `raw/20260428T115757-{alone,paired}.csv`,
+`raw/20260428T115757-meta.txt`, `raw/run-stdout.log`
+**Wall-clock duration:** 119.3 s (~5 % faster than M1 Pro's 125 s)
+**Analysis:** `uv run analysis.py 20260428T115757`
+**Outcome:** **THIS REVERSES THE M1 PRO STORY.** The biggest
+single-finding from M1 Pro 005 (~42 µs inter-encoder gap) is GONE
+on M4 Max. The headline-falsified claim (variance reduction) is
+PARTIALLY validated on M4 Max. Decision 004's narrowing is at risk
+of being over-conservative for G16.
+
+### Headline 1: the inter-encoder gap collapsed from ~42 µs to ~1 µs
+
+This is **the largest qualitative shift** in the M4 Max re-run series.
+On M1 Pro, two consecutive `MTLComputeCommandEncoder` passes inside
+a single `MTLCommandBuffer` were separated by a p50 idle of ~42 µs,
+treated as a structural property of the encoder model. On M4 Max,
+the same pattern produces a p50 gap of **~833 ns**.
+
+| condition  | M1 Pro p50 gap | M4 Max p50 gap | M4 Max p99 gap | reduction |
+|------------|---------------:|---------------:|---------------:|----------:|
+| T1_paired  | 42 000         | 833            | 1 375          | **50×**   |
+| T2_paired  | 40 458         | 791            | 1 167          | **51×**   |
+| T3_paired  | 41 750         | 958            | 1 459          | **44×**   |
+| T4_paired  | 42 542         | 833            | 1 458          | **51×**   |
+| Distribution shape | 8-50 µs at p99 | 0.4-3.5 µs at p99 | sub-µs throughout | qualitatively different |
+
+On M4 Max, two compute encoders inside one command buffer are
+**effectively atomically tight** (sub-µs separation), which is what
+decision 003 originally assumed and what decision 004 narrowed away
+from on the basis of M1 Pro evidence. The mechanism that produced
+the 42 µs gap on M1 Pro (per-encoder setup cost? GPU front-end
+stall? command-list reordering?) is either fixed or vastly cheaper
+on the M4 Max front end.
+
+### Headline 2: pair-timing variance reduction WORKS on M4 Max for noisy trials
+
+Primary 1 from the original 005 (the load-bearing claim of decision
+003) was falsified on M1 Pro: ratio cv was equal to or worse than
+trial-alone cv for every trial. **On M4 Max, ratio cv is BETTER than
+alone cv for two of four trials, and dramatically better for T2:**
+
+| trial | alone p50 (ns) | alone rcv | paired-trial rcv | ratio rcv | M4 Max verdict       | M1 Pro verdict |
+|-------|---------------:|----------:|-----------------:|----------:|----------------------|----------------|
+| T1    |         36 875 |    0.0100 |           0.0084 |  **0.0072** | ratio 28% better       | slightly worse |
+| T2    |        248 584 |    0.3361 |           0.4262 |  **0.0053** | **ratio 63× better**   | **4.75× worse**|
+| T3    |         59 459 |    0.0057 |           0.0180 |    0.0186 | ratio 3.3× worse     | ~ same |
+| T4    |        112 375 |    0.0055 |           0.3337 |    0.0192 | ratio 3.5× worse     | ~ same |
+
+Three things are happening in this table:
+
+1. **For T2**, alone cv is 0.336 (M4 Max's bimodal band starts at
+   iters=4096 per the 004 re-run, so this trial sits at the band
+   edge). Paired with the now-tight ref, the ratio cv collapses to
+   0.005 — roughly the ref's own cv. The bimodal noise that
+   contaminates T2 alone IS shared with the ref (which sits 1 µs
+   away in the same chip state) and DOES cancel in the ratio. **This
+   is the exact mechanism decision 003 hypothesized and decision 004
+   wrote off.** The 42 µs gap on M1 Pro broke the mechanism; the
+   1 µs gap on M4 Max restores it.
+2. **For T1**, alone cv is at the floor (0.010); ratio improves
+   modestly (0.0072) because the ref's contribution doesn't
+   dominate. Variance composition `cv²(A/B) ≈ cv²(A) + cv²(B)`
+   still applies but both halves are small and the ratio benefits
+   from any shared noise that does cancel.
+3. **For T3 and T4**, alone cv is at the *quantization* floor
+   (0.0055-0.0057). Pairing brings in the ref's cv and the ratio
+   ends up worse (0.018-0.019). This is the same observation as
+   decision 004's point 6 — for trials whose alone cv is already at
+   quantization, pair timing is strictly worse than alone timing.
+   The rule still holds; it's just that on M4 Max with the gap fixed,
+   the *operating envelope where pair timing helps* is much wider.
+
+### Headlines 3-4: median preservation and ratio stability still hold
+
+Same as M1 Pro:
+
+| primary check                                     | M1 Pro result | M4 Max result |
+|---------------------------------------------------|---------------|---------------|
+| Primary 2 (paired trial p50 vs alone p50)         | all ±1 %      | all ±1.2 %    |
+| Primary 3 (ratio p50 stability across 3 sweeps)   | all ≤1 %      | all ≤0.9 %    |
+| Subsidiary (ref-when-paired vs ref-alone p50)     | +0.16-0.27 %  | -0.06 to -0.62 % |
+| Subsidiary (ref-when-paired robust_cv vs ref_alone)| 0.003-0.006 vs 0.008 | 0.003-0.426 vs 0.004 |
+
+Two things to flag:
+- The ref's robust_cv when paired with T2 jumps to 0.426 on M4 Max
+  (compared to ~0.003 paired with T1 or T3). T2 is the bimodal
+  trial — *and* the ref is being measured in the same chip state
+  one encoder before T2. So the ref ALSO sees the bimodal state.
+  This is exactly why the ratio cancels — they both move together.
+  Same story, different number, on T4 (ref rcv 0.337 paired with T4).
+- T3's `paired-trial rcv` is 0.018 vs alone 0.006 — the *opposite* of
+  the variance-reduction story for one specific trial. Likely
+  because T3 (write_tid 524K) sits exactly at the M4 Max work-
+  dominance threshold per 004 (524K is the first level where M4 Max
+  is `~89%` work-dominated), so its alone signal is already very
+  clean and the ref adds noise.
+
+### Subsidiary: tail outlier suppression — partially holds
+
+| condition          | alone naive_cv | paired-trial naive_cv | tail change |
+|--------------------|---------------:|----------------------:|-------------|
+| T1                 | 0.013          | 0.027                 | slightly worse |
+| T2                 | 0.286          | 0.310                 | similar     |
+| T3                 | 0.140          | 0.195                 | slightly worse |
+| T4                 | 0.250          | 0.272                 | similar     |
+
+| condition          | alone max (ns) | paired-trial max (ns) | factor reduction |
+|--------------------|---------------:|----------------------:|-----------------:|
+| T1                 |         44 458 |                47 458 | ~ same           |
+| T2                 |        255 542 |               267 083 | ~ same           |
+| T3                 |        232 916 |               241 375 | ~ same           |
+| T4                 |        432 417 |               187 666 | **2.3× lower** ✅|
+
+The dramatic tail-suppression seen on M1 Pro (T1 alone max 833 µs →
+paired 158 µs, 5× reduction) does NOT reproduce broadly on M4 Max.
+T4 still shows a 2.3× tail reduction, but T1-T3 see no meaningful
+tail-suppression benefit. Possible explanation: M1 Pro's 42 µs gap
+*was itself* the mechanism that suppressed tails (by shifting the
+trial's measurement window out of OS-scheduler alignment bands per
+M1 Pro Surprise §3, second hypothesis). With the gap gone on
+M4 Max, the trial is back in alignment with whatever causes its
+own tail outliers, and tails track alone behavior.
+
+This shifts the M4 Max story for pair timing significantly:
+
+- Variance reduction: **partially recovers from M1 Pro** (works for
+  noisy trials at non-quantization-floor cv).
+- Tail suppression: **partially loses from M1 Pro** (no longer the
+  reliable benefit it was).
+- Median preservation, ratio stability: **same as M1 Pro**.
+
+### What this means for decision 004
+
+Decision 004 (active, supersedes 003) currently says pair timing is
+NOT a within-session variance reducer, citing M1 Pro 005's data. On
+M4 Max evidence, that statement is too strong:
+
+- Pair timing IS a within-session variance reducer for trials whose
+  alone cv is in the noisy-but-not-quantization band (T2: 63× cv
+  reduction).
+- The mechanism is the same one decision 003 hypothesized and
+  decision 004 declared dead — and on M4 Max, the inter-encoder gap
+  no longer breaks it.
+- The "operating-range constraint" (point 6 in decision 004 — pair
+  timing is strictly worse for trials at quantization floor) still
+  holds on M4 Max; that part of decision 004 is unchanged.
+
+Decision 004 is **not yet superseded** by this finding (we want
+cross-session validation and ideally a re-run with parameters tuned
+to M4 Max's revised work-dominance thresholds), but it should be
+flagged as M1-Pro-specific in its load-bearing argument. A future
+decision 005 — once cross-session ratio stability is validated on
+M4 Max — would likely re-elevate pair timing to "primary methodology
+for variance-bound questions on G16 and beyond, with the
+quantization-floor exception."
+
+### What does NOT change G13 → G16
+
+- 24 MHz tick quantization apparent throughout.
+- Median preservation (paired trial p50 ~ alone p50).
+- Within-session ratio stability across 3 sweeps with 30 s cooldowns.
+- Ratio = strictly worse than alone for trials at quantization floor.
+- Variance composition `cv²(A/B) ≈ cv²(A) + cv²(B)` is unchanged math.
+
+### What does change G13 → G16
+
+- Inter-encoder gap inside one cb: **42 000 ns → 833 ns** (50× reduction).
+- Variance reduction: **fails on M1 Pro for everything; works on M4 Max
+  for noisy trials**.
+- Tail suppression: **dramatic on M1 Pro for some trials; mild on
+  M4 Max** (only T4 saw a meaningful tail reduction).
+- The bimodal trial (T2) is now USEFUL as a paired trial: its alone
+  cv is high (0.336) but its ratio cv collapses to 0.005, validating
+  the original decision 003 hypothesis for the first time.
+
+### New questions raised by the M4 Max re-run
+
+- **What's the M4 Max equivalent of T2?** T2 was chosen on the basis
+  of M1 Pro 004's bimodality at fma_iters 8192-16384, with iters=4096
+  selected as "in the linear regime, deliberately noisy." On M4 Max,
+  iters=4096 turns out to be the strongest bimodal level (per 004
+  M4 Max addendum). The choice was lucky for showing variance
+  reduction. A redux experiment with M4 Max-tuned trial parameters
+  would be useful before declaring the operating envelope.
+- **Cross-session ratio stability on M4 Max** — still untested. Same
+  question as the M1 Pro 005 left open. The strongest case for pair
+  timing as a primary methodology lives in this question; on M4 Max
+  the variance-reduction case is also now live, so the cross-session
+  question carries more weight.
+- **What changed in the GPU front end between G13 and G16 to collapse
+  the 42 µs gap?** This is a curiosity question more than a
+  methodology question, but the answer might inform what other
+  encoder patterns are now viable on M4 Max that weren't on M1 Pro.
+- **Does the tail-suppression mechanism shift to a different
+  technique on M4 Max?** With the inter-encoder gap no longer
+  shifting the measurement window by 42 µs, the same outliers are
+  now in the trial. If we want tail suppression on M4 Max, we may
+  need a different pattern (e.g. deliberate inter-encoder sleep,
+  or repeated paired sampling).

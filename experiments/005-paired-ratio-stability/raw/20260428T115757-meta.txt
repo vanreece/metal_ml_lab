@@ -1,0 +1,164 @@
+experiment: 005-paired-ratio-stability
+timestamp: 20260428T115757
+device: Apple M4 Max
+registry_id: 4294968451
+architecture: applegpu_g16s
+chip: arm  machine: arm64
+os: macOS-26.4.1-arm64-arm-64bit-Mach-O
+python: 3.14.4 (main, Apr 14 2026, 14:46:33) [Clang 22.1.3 ]
+pyobjc: 12.1
+qos: pthread_set_qos_class_self_np -> 0
+power: Now drawing from 'AC Power'
+powermetrics: sudo -n failed; powermetrics skipped
+powermetrics_started_wall_ns: 6190223497291
+caffeinate: started pid=9726
+display_powerstate_start: Driver ID  Current State  Max State  Current State Description
+Internal failure: Failed to get power state information
+display_powerstate_end:   Driver ID  Current State  Max State  Current State Description
+Internal failure: Failed to get power state information
+pmset_assertions_start: |
+  2026-04-28 11:57:57 -0700 
+  Assertion status system-wide:
+     BackgroundTask                 0
+     PreventDiskIdle                1
+     ApplePushServiceTask           0
+     UserIsActive                   1
+     PreventUserIdleDisplaySleep    1
+     SoftwareUpdateTask             0
+     PreventSystemSleep             0
+     ExternalMedia                  0
+     InternalPreventDisplaySleep    1
+     PreventUserIdleSystemSleep     1
+     NetworkClientActive            0
+  Listed by owning process:
+     pid 857(cloudd): [0x0000182b0001a260] 00:00:02 PreventUserIdleSystemSleep named: "NSURLSessionTask 3EA58F1A-EA30-4AE7-8979-761DC2D2450E"  
+  	Timeout will fire in 10797 secs Action=TimeoutActionTurnOff
+     pid 857(cloudd): [0x0000182b0001a264] 00:00:02 PreventUserIdleSystemSleep named: "NSURLSessionTask DB3D5D48-FEF2-4C37-8CF2-4F22A31A76CD"  
+  	Timeout will fire in 10797 secs Action=TimeoutActionTurnOff
+     pid 857(cloudd): [0x0000182c0001a265] 00:00:01 PreventUserIdleSystemSleep named: "NSURLSessionTask 26C018BA-F841-4008-9B5D-4BB0542D5ECE"  
+  	Timeout will fire in 10798 secs Action=TimeoutActionTurnOff
+     pid 857(cloudd): [0x0000182c0001a266] 00:00:01 PreventUserIdleSystemSleep named: "NSURLSessionTask 21B7F786-CE69-4132-AB82-7DFF1E17B4EE"  
+  	Timeout will fire in 10798 secs Action=TimeoutActionTurnOff
+     pid 857(cloudd): [0x0000182c0001a267] 00:00:01 PreventUserIdleSystemSleep named: "NSURLSessionTask 67E0F992-4F45-439C-B7B5-9A61C78B45F5"  
+  	Timeout will fire in 10799 secs Action=TimeoutActionTurnOff
+     pid 857(cloudd): [0x0000182d0001a268] 00:00:00 PreventUserIdleSystemSleep named: "NSURLSessionTask BCF84680-6C50-4A77-A519-C26AF8E9D1C2"  
+  	Timeout will fire in 10799 secs Action=TimeoutActionTurnOff
+     pid 857(cloudd): [0x0000182d0001a269] 00:00:00 PreventUserIdleSystemSleep named: "NSURLSessionTask 4018E30C-8119-40E6-9BFB-414E7579CFB4"  
+  	Timeout will fire in 10800 secs Action=TimeoutActionTurnOff
+     pid 857(cloudd): [0x0000182d0001a26a] 00:00:00 PreventUserIdleSystemSleep named: "NSURLSessionTask C6D02839-96A1-4277-B8BE-C5651637D7D2"  
+  	Timeout will fire in 10800 secs Action=TimeoutActionTurnOff
+     pid 874(routined): [0x000018280001a256] 00:00:05 PreventUserIdleSystemSleep named: "MirroringRequest-4C30FD97-2A75-41F7-8A2F-6F9A0B061E3D"  
+  	Timeout will fire in 294 secs Action=TimeoutActionTurnOff
+     pid 454(WindowServer): [0x000017b70009a1d0] 00:01:17 UserIsActive named: "com.apple.iohideventsystem.queue.tickle serviceID:10000032f service:AppleM68Buttons product:(null) eventType:3"  
+  	Timeout will fire in 523 secs Action=TimeoutActionRelease
+     pid 9721(caffeinate): [0x0000182b0001a261] 00:00:02 PreventUserIdleSystemSleep named: "caffeinate command-line tool"  
+  	Details: caffeinate asserting on behalf of 'uv' (pid 9719)
+  	Localized=THE CAFFEINATE TOOL IS PREVENTING SLEEP.
+     pid 9721(caffeinate): [0x0000182b0005a262] 00:00:02 PreventUserIdleDisplaySleep named: "caffeinate command-line tool"  
+  	Details: caffeinate asserting on behalf of 'uv' (pid 9719)
+  	Localized=THE CAFFEINATE TOOL IS PREVENTING SLEEP.
+     pid 9721(caffeinate): [0x0000182b000fa263] 00:00:02 PreventDiskIdle named: "caffeinate command-line tool"  
+  	Details: caffeinate asserting on behalf of 'uv' (pid 9719)
+  	Localized=THE CAFFEINATE TOOL IS PREVENTING SLEEP.
+     pid 395(powerd): [0x0000170e00109962] 00:04:47 InternalPreventDisplaySleep named: "com.apple.powermanagement.delayDisplayOff"  
+  	Timeout will fire in 12 secs Action=TimeoutActionTurnOff
+     pid 9699(caffeinate): [0x000018080001a23d] 00:00:37 PreventUserIdleSystemSleep named: "caffeinate command-line tool"  
+  	Details: caffeinate asserting for 300 secs
+  	Localized=THE CAFFEINATE TOOL IS PREVENTING SLEEP.
+  	Timeout will fire in 262 secs Action=TimeoutActionRelease
+  Kernel Assertions: 0x100=MAGICWAKE
+     id=582  level=255 0x100=MAGICWAKE creat=  mod= description=en0 owner=IOSkywalkNetworkBSDClient
+experiment_started_wall_ns: 6190256882541
+experiment_ended_wall_ns:   6309525421166
+ref_kernel: fma_loop iters=1024 threads=32
+trials: {'T1': ('fma_loop', {'fma_iters': 512, 'threads': 32}), 'T2': ('fma_loop', {'fma_iters': 4096, 'threads': 32}), 'T3': ('write_tid', {'threads': 524288}), 'T4': ('write_tid', {'threads': 1048576})}
+threadgroup_size: 32
+n_per_combo: 300
+n_sweeps: 3
+per_combo_cooldown_s: 2.0
+between_sweep_cooldown_s: 30.0
+warmup_recipe: K=1 untimed dispatch of trial kernel before each measurement (ref not warmed up)
+sampling_point: MTLCounterSamplingPointAtStageBoundary
+paired_pattern: ONE MTLCommandBuffer with TWO sequential MTLComputeCommandEncoders, each with own pass descriptor + timestamp pair. Order: [ref, trial].
+correlation_start: cpu=6190256880166 gpu=6190256880166
+correlation_end:   cpu=6309525429333 gpu=6309525429333
+experiment_wall_clock_s: 119.27
+
+alone summary per (condition, sweep) (min | p50 | p95 | robust_cv | naive_cv):
+  T1_alone     sweep=0 min=    36209 p50=     36708 p95=     37083 robust_cv=0.0067 naive_cv=0.0180
+  T1_alone     sweep=1 min=    36416 p50=     37000 p95=     37459 robust_cv=0.0083 naive_cv=0.0076
+  T1_alone     sweep=2 min=    36291 p50=     36980 p95=     37459 robust_cv=0.0092 naive_cv=0.0083
+  T2_alone     sweep=0 min=    79750 p50=    248667 p95=    249250 robust_cv=0.3341 naive_cv=0.2381
+  T2_alone     sweep=1 min=    71458 p50=    248542 p95=    249125 robust_cv=0.4259 naive_cv=0.2993
+  T2_alone     sweep=2 min=    71375 p50=    248541 p95=    249042 robust_cv=0.4685 naive_cv=0.3038
+  T3_alone     sweep=0 min=    58958 p50=     59458 p95=     60083 robust_cv=0.0057 naive_cv=0.2093
+  T3_alone     sweep=1 min=    58959 p50=     59500 p95=     60042 robust_cv=0.0057 naive_cv=0.0691
+  T3_alone     sweep=2 min=    33084 p50=     59500 p95=     60083 robust_cv=0.0053 naive_cv=0.1001
+  T4_alone     sweep=0 min=    49333 p50=    112375 p95=    113502 robust_cv=0.0044 naive_cv=0.2158
+  T4_alone     sweep=1 min=    49083 p50=    112417 p95=    113086 robust_cv=0.3274 naive_cv=0.2059
+  T4_alone     sweep=2 min=    41125 p50=    112270 p95=    113086 robust_cv=0.3304 naive_cv=0.3022
+  ref_alone    sweep=0 min=    66584 p50=     67084 p95=     67584 robust_cv=0.0037 naive_cv=0.0102
+  ref_alone    sweep=1 min=    66625 p50=     67084 p95=     67667 robust_cv=0.0037 naive_cv=0.0043
+  ref_alone    sweep=2 min=    66583 p50=     67084 p95=     67750 robust_cv=0.0041 naive_cv=0.0064
+
+paired summary per (condition, sweep): ref / trial / ratio / gap
+  T1_paired    sweep=0
+    ref:    p50=     66958 robust_cv=0.0032
+    trial:  p50=     37084 robust_cv=0.0283
+    ratio:  p50=  0.5529 robust_cv=0.0271
+    gap_ns: p50=     875 p95=    1167 max=2625
+  T1_paired    sweep=1
+    ref:    p50=     66834 robust_cv=0.0028
+    trial:  p50=     36667 robust_cv=0.0044
+    ratio:  p50=  0.5482 robust_cv=0.0049
+    gap_ns: p50=     833 p95=    1083 max=1167
+  T1_paired    sweep=2
+    ref:    p50=     66833 robust_cv=0.0028
+    trial:  p50=     36708 robust_cv=0.0042
+    ratio:  p50=  0.5488 robust_cv=0.0052
+    gap_ns: p50=     833 p95=    1166 max=1708
+  T2_paired    sweep=0
+    ref:    p50=     66834 robust_cv=0.0032
+    trial:  p50=    248791 robust_cv=0.0012
+    ratio:  p50=  3.7221 robust_cv=0.0036
+    gap_ns: p50=     833 p95=    1086 max=1375
+  T2_paired    sweep=1
+    ref:    p50=     36917 robust_cv=0.9069
+    trial:  p50=    138084 robust_cv=0.8969
+    ratio:  p50=  3.7200 robust_cv=0.0076
+    gap_ns: p50=     730 p95=    1041 max=8042
+  T2_paired    sweep=2
+    ref:    p50=     36958 robust_cv=0.9059
+    trial:  p50=    138021 robust_cv=0.9055
+    ratio:  p50=  3.7181 robust_cv=0.0075
+    gap_ns: p50=     709 p95=     958 max=1166
+  T3_paired    sweep=0
+    ref:    p50=     67083 robust_cv=0.0032
+    trial:  p50=     60291 robust_cv=0.0170
+    ratio:  p50=  0.8974 robust_cv=0.0172
+    gap_ns: p50=     958 p95=    1167 max=1625
+  T3_paired    sweep=1
+    ref:    p50=     66958 robust_cv=0.0065
+    trial:  p50=     59980 robust_cv=0.0203
+    ratio:  p50=  0.9040 robust_cv=0.0230
+    gap_ns: p50=     916 p95=    1167 max=3500
+  T3_paired    sweep=2
+    ref:    p50=     67042 robust_cv=0.0051
+    trial:  p50=     60167 robust_cv=0.0181
+    ratio:  p50=  0.8996 robust_cv=0.0177
+    gap_ns: p50=    1041 p95=    1419 max=2625
+  T4_paired    sweep=0
+    ref:    p50=     66917 robust_cv=0.0055
+    trial:  p50=    113083 robust_cv=0.0128
+    ratio:  p50=  1.6959 robust_cv=0.0149
+    gap_ns: p50=     875 p95=    1167 max=1667
+  T4_paired    sweep=1
+    ref:    p50=     66688 robust_cv=0.4262
+    trial:  p50=    112333 robust_cv=0.4194
+    ratio:  p50=  1.6926 robust_cv=0.0287
+    gap_ns: p50=     792 p95=    1086 max=4000
+  T4_paired    sweep=2
+    ref:    p50=     66708 robust_cv=0.4255
+    trial:  p50=    112250 robust_cv=0.4157
+    ratio:  p50=  1.6924 robust_cv=0.0249
+    gap_ns: p50=     792 p95=    1125 max=3833

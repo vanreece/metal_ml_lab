@@ -238,116 +238,182 @@ and a measurement protocol that does not contaminate it).
 **Hardware/software:** Apple M1 Pro 16GB, macOS 26.3.1, AC power.
 **Closed by:** experiment 004.
 
-## Does paired co-encoded ratio timing reduce within-session variance vs single-kernel timing?
-
-**Answer:** No, on M1 Pro for kernels in the 50-400 µs duration
-range. Across 4 trial kernels (T1 fma_loop iters=512, T2 fma_loop
-iters=4096, T3 write_tid 524K threads, T4 write_tid 1M threads)
-each measured both alone and paired with the reference (fma_loop
-iters=1024 at 32t), the paired ratio's robust cv was equal to or
-**worse** than the trial-alone robust cv in every case:
-
-| trial | alone robust_cv | ratio robust_cv | verdict        |
-|-------|----------------:|----------------:|----------------|
-| T1    |          0.0095 |          0.0112 | ratio ≈ alone  |
-| T2    |          0.0012 |          0.0057 | **4.75× worse** |
-| T3    |          0.0346 |          0.0374 | ratio ≈ alone  |
-| T4    |          0.0392 |          0.0410 | ratio ≈ alone  |
-
-Mechanism: variance composition for ratios of independent measurements
-is `cv²(A/B) ≈ cv²(A) + cv²(B)`. The ratio inherits noise from both
-the trial and the reference rather than canceling shared noise,
-because the dominant within-session noise sources for kernels at
-warm steady state (timestamp quantization, OS scheduling /
-preemption, per-encoder setup variance) are not state that's
-shared between two encoders 42 µs apart in the same command buffer.
-The "ratios cancel DVFS variance" intuition only applies when DVFS
-variance is the dominant noise source, which it isn't inside a
-2-minute hot run.
-
-**Practical consequence:** for within-session cv-bound questions,
-single-kernel timing with N samples and robust statistics is the
-right tool. Pair timing is *not* a variance reducer and should not
-be invoked for that purpose. See decisions/004-narrowed-pair-timing-scope.md
-for the narrowed operating envelope.
-
-**Hardware/software:** Apple M1 Pro 16GB, macOS 26.3.1, AC power.
-**Closed by:** experiment 005.
-**Still open for:** kernels at much longer durations (>1 ms) where
-DVFS state changes might happen mid-run (untested); cross-session
-ratio stability (which is a different question).
-
 ## Does paired co-encoded timing perturb the trial's underlying behavior?
 
-**Answer:** No. Across all 4 trial kernels in 005, the trial's
-median when measured paired vs alone shifted by less than ±1 % (T1
--0.93%, T2 -0.13%, T3 -0.68%, T4 +0.81%). The reference dispatch
-that immediately precedes the trial inside the same command buffer
-does not meaningfully change the trial's behavior.
+**Answer:** No, on both M1 Pro and M4 Max. Across all 4 trial
+kernels in 005, the trial's median when measured paired vs alone
+shifted by less than ±1.2 % on both chips:
+
+| trial | M1 Pro shift | M4 Max shift |
+|-------|-------------:|-------------:|
+| T1    |       -0.93% |       -0.34% |
+| T2    |       -0.13% |       -0.00% |
+| T3    |       -0.68% |       +1.19% |
+| T4    |       +0.81% |       +0.15% |
+
+The reference dispatch that immediately precedes the trial inside
+the same command buffer does not meaningfully change the trial's
+behavior on either chip generation.
 
 **Practical consequence:** any per-trial number from a paired
 measurement can be compared directly to a single-kernel measurement
 of the same kernel. Pair timing does not introduce a systematic bias
 on the trial.
 
-**Hardware/software:** Apple M1 Pro 16GB, macOS 26.3.1, AC power.
-**Closed by:** experiment 005.
+**Hardware/software (verified):**
+- Apple M1 Pro 16GB / `applegpu_g13s` / macOS 26.3.1, AC power.
+- Apple M4 Max 36GB / `applegpu_g16s` / macOS 26.4.1, AC power.
+
+**Closed by:** experiment 005 on M1 Pro (2026-04-27); extended to
+M4 Max by experiment 005 re-run (2026-04-28).
+
+(The "Does paired ratio timing reduce within-session variance?"
+question with chip-tagged answers is consolidated in the entry
+further down — please refer to that one rather than this stub.)
 
 ## Is the paired ratio stable across within-session sweep repetitions?
 
-**Answer:** Yes, within ~1 %. Across 3 sweep repetitions of the
-same paired conditions with 30 s between-sweep cooldowns, the
-ratio's per-sweep median agreed within:
+**Answer:** Yes on both M1 Pro and M4 Max, within ~1 % spread across
+3 sweeps with 30 s between-sweep cooldowns:
 
-| trial | spread |
-|-------|-------:|
-| T1    |  0.23% |
-| T2    |  0.20% |
-| T3    |  0.98% |
-| T4    |  0.60% |
+| trial | M1 Pro spread | M4 Max spread |
+|-------|--------------:|--------------:|
+| T1    |         0.23% |         0.86% |
+| T2    |         0.20% |         0.11% |
+| T3    |         0.98% |         0.74% |
+| T4    |         0.60% |         0.21% |
 
-T3 sits right at the boundary, mostly reflecting T3 itself being
-the noisiest trial (alone robust_cv = 0.035) rather than ratio-
-specific drift.
+Both chips meet the ≤ 1 % within-session stability target across
+all four trial kinds. M4 Max sweep-to-sweep ratio drift is
+generally similar magnitude to M1 Pro.
 
 **Practical consequence:** within a single script invocation, the
-paired ratio is a stable relative-magnitude metric. "Kernel A is
-~0.54× kernel B's duration on this chip in this session" is a
-sound claim if A and B are paired with the same reference.
+paired ratio is a stable relative-magnitude metric on both chip
+generations. "Kernel A is ~0.55× kernel B's duration on this chip
+in this session" is a sound claim if A and B are paired with the
+same reference.
 
-**Hardware/software:** Apple M1 Pro 16GB, macOS 26.3.1, AC power.
-**Closed by:** experiment 005.
-**Still open for:** cross-session ratio stability (untested; a
-follow-up experiment would run the same conditions across separate
-process invocations / time-of-day / thermal states).
+**Hardware/software (verified):**
+- Apple M1 Pro 16GB / `applegpu_g13s` / macOS 26.3.1, AC power.
+- Apple M4 Max 36GB / `applegpu_g16s` / macOS 26.4.1, AC power.
 
-## What is the inter-encoder gap inside a single MTLCommandBuffer on M1 Pro?
+**Closed by:** experiment 005 on M1 Pro (2026-04-27); extended to
+M4 Max by experiment 005 re-run (2026-04-28).
+**Still open for:** cross-session ratio stability on either chip
+(untested; a follow-up experiment would run the same conditions
+across separate process invocations / time-of-day / thermal states).
 
-**Answer:** ~42 µs at p50, with low variance (p95 in [46, 48] µs,
-p99 in [49, 74] µs across 4 trial kinds × 900 paired measurements
-each). Two consecutive `MTLComputeCommandEncoder` passes inside a
-single `MTLCommandBuffer` are *not* atomically tight; the GPU
-front end inserts substantial idle time between them.
+## What is the inter-encoder gap inside a single MTLCommandBuffer?
 
-This is roughly 4 × the dispatch-overhead floor (~9 µs) and is
-consistent across kernel kind (fma_loop and write_tid), suggesting
-it's a property of the encoder model itself rather than of the
-trial kernel. Mechanism (per-encoder setup cost, GPU front-end
-stall, command-list reordering) not isolated.
+**Answer (M1 Pro):** ~42 µs at p50, with low variance (p95 in
+[46, 48] µs, p99 in [49, 74] µs across 4 trial kinds × 900 paired
+measurements each). Two consecutive `MTLComputeCommandEncoder` passes
+inside a single `MTLCommandBuffer` are *not* atomically tight; the
+GPU front end inserts substantial idle time between them. Roughly
+4 × the dispatch-overhead floor (~9 µs); consistent across kernel
+kind (fma_loop and write_tid), suggesting it's a property of the
+encoder model itself.
 
-**Practical consequence:** any analysis that depends on "ref and
-trial in the same chip state" inside a paired command buffer has
-~42 µs of resolution limit. For DVFS / thermal state changes that
-happen on millisecond-or-longer timescales, this is fine; for
-cycle-accurate or sub-microsecond comparisons, the same-buffer
-pattern is not tight enough.
+**Answer (M4 Max):** ~833 ns at p50 — **a 50× reduction from M1 Pro**.
+Across the same 4 trial kinds × 900 paired measurements:
 
-**Hardware/software:** Apple M1 Pro 16GB, macOS 26.3.1, AC power,
-PyObjC + `MTLCounterSamplingPointAtStageBoundary`.
-**Closed by:** experiment 005.
-**Still open for:** whether different encoder patterns (separate
-command buffers, explicit barriers, queue properties) reduce the
-gap; whether the gap differs on M4 Max.
+| condition  | M1 Pro p50 | M4 Max p50 | M4 Max p99 | reduction |
+|------------|-----------:|-----------:|-----------:|----------:|
+| T1_paired  | 42 000 ns  | 833 ns     | 1 375 ns   | 50×       |
+| T2_paired  | 40 458 ns  | 791 ns     | 1 167 ns   | 51×       |
+| T3_paired  | 41 750 ns  | 958 ns     | 1 459 ns   | 44×       |
+| T4_paired  | 42 542 ns  | 833 ns     | 1 458 ns   | 51×       |
+
+On M4 Max, two compute encoders inside one command buffer ARE
+effectively atomically tight (sub-µs separation). The mechanism that
+produced the 42 µs gap on M1 Pro is either fixed or vastly cheaper
+on the G16 front end. This finding directly affects the validity of
+decision 004's narrowing of pair-timing scope (see decision 004's
+updated status header).
+
+**Practical consequence (per chip):**
+- **M1 Pro:** any analysis that depends on "ref and trial in the
+  same chip state" inside a paired command buffer has ~42 µs of
+  resolution limit. Pair timing's variance-cancellation mechanism
+  is broken at this gap size for fast-changing chip state.
+- **M4 Max:** ref and trial sit ~1 µs apart inside one cb. Pair
+  timing's variance cancellation works for shared chip state at
+  any timescale longer than ~1 µs (which includes everything
+  meaningful — DVFS, thermal, cache state). This is the pre-
+  decision-003 design assumption coming back.
+
+**Hardware/software (verified):**
+- Apple M1 Pro 16GB / `applegpu_g13s` / macOS 26.3.1, PyObjC +
+  `MTLCounterSamplingPointAtStageBoundary`.
+- Apple M4 Max 36GB / `applegpu_g16s` / macOS 26.4.1, PyObjC +
+  `MTLCounterSamplingPointAtStageBoundary`.
+
+**Closed by:** experiment 005 on M1 Pro (2026-04-27); extended to
+M4 Max by experiment 005 re-run (2026-04-28).
+**Still open:** mechanism investigation for why the gap shrank
+between G13 and G16; whether different encoder patterns can reduce
+the gap further on either chip; whether the gap is smaller still on
+G14/G15 (unmeasured intermediate generations).
+
+## Does paired co-encoded ratio timing reduce within-session variance vs single-kernel timing?
+
+**Answer (M1 Pro):** No, on M1 Pro for kernels in the 50-400 µs
+duration range. Across 4 trial kernels each measured both alone and
+paired with the reference (fma_loop iters=1024 at 32t), the paired
+ratio's robust cv was equal to or worse than the trial-alone robust
+cv in every case. Mechanism: the 42 µs inter-encoder gap (above) is
+large enough that ref and trial don't see the same fast-changing
+chip state, and variance composition `cv²(A/B) ≈ cv²(A) + cv²(B)`
+adds the ref's noise rather than canceling shared noise.
+
+**Answer (M4 Max):** Yes, for noisy trials. Same 4 trial kernels,
+same reference, same protocol on M4 Max:
+
+| trial | alone rcv | ratio rcv | M4 Max verdict       | M1 Pro verdict |
+|-------|----------:|----------:|----------------------|----------------|
+| T1    | 0.0100    | **0.0072** | ratio 28% better       | slightly worse |
+| T2    | 0.3361    | **0.0053** | **ratio 63× better**   | 4.75× worse    |
+| T3    | 0.0057    | 0.0186    | ratio 3.3× worse     | ~ same |
+| T4    | 0.0055    | 0.0192    | ratio 3.5× worse     | ~ same |
+
+T2 (fma_loop iters=4096) sits at the edge of M4 Max's bimodal band
+(per 004 M4 Max addendum), which makes its alone cv high (0.336 vs
+0.001 on M1 Pro). Because the ref now sits ~1 µs from T2 inside the
+same command buffer, the ref sees the same bimodal state as the
+trial, and the bimodal noise cancels in the ratio. Ratio cv collapses
+to 0.005 — essentially the ref's own quantization-floor cv.
+
+T3 and T4's alone cv is at the quantization floor (~0.005-0.006),
+where the variance composition formula adds the ref's cv to a
+trial that has nothing left to cancel. The "operating-range
+constraint" from M1 Pro 005 still holds: pair timing is strictly
+worse than alone timing for trials at quantization floor.
+
+**Mechanism explanation:** the variance cancellation works when
+(a) the gap is small enough that ref and trial see correlated chip
+state, and (b) the trial's alone cv is dominated by something the
+ref also experiences. Both conditions are met on M4 Max for noisy
+trials; only condition (b) is met on M1 Pro, with (a) broken by the
+42 µs gap.
+
+**Practical consequence:** the within-session-variance use case for
+pair timing depends on chip generation:
+- **M1 Pro:** single-kernel timing with N samples and robust
+  statistics is the right tool for cv-bound questions. Decision 004
+  applies.
+- **M4 Max:** pair timing IS a useful within-session variance reducer
+  for trials whose alone cv is in the noisy-but-not-quantization
+  band. Decision 004's narrowing is too conservative for G16.
+
+**Hardware/software (verified):**
+- Apple M1 Pro 16GB / `applegpu_g13s` / macOS 26.3.1, AC power.
+- Apple M4 Max 36GB / `applegpu_g16s` / macOS 26.4.1, AC power.
+
+**Closed by:** experiment 005 on M1 Pro (2026-04-27); extended to
+M4 Max by experiment 005 re-run (2026-04-28).
+**Still open for:** kernels at much longer durations (>1 ms) on
+either chip; cross-session ratio stability on either chip;
+intermediate generations (G14/G15).
 
 ## What is the GPU timestamp counter's hardware tick resolution on M1 Pro and M4 Max?
 
