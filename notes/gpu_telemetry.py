@@ -153,8 +153,12 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n", 1)[0])
     ap.add_argument("--interval-ms", type=int, default=1000,
                     help="powermetrics sample interval in ms (default 1000)")
-    ap.add_argument("--samplers", default="gpu_power,thermal,smc",
-                    help="comma-sep list of powermetrics samplers")
+    ap.add_argument("--samplers", default="gpu_power,thermal",
+                    help="comma-sep list of powermetrics samplers. The SMC "
+                         "sampler that exposed die-temp / fan RPM was "
+                         "renamed/removed in macOS 26 (powermetrics rejects "
+                         "'smc'); tracking down the new name is open. Pass "
+                         "--samplers gpu_power,thermal,<other> to experiment.")
     ap.add_argument("--csv", type=str, default=None,
                     help="if set, write per-sample CSV to this path "
                          "(includes monotonic_ns for joining with experiment data)")
@@ -190,12 +194,17 @@ def main() -> int:
             "thermal_pressure", "fan0_rpm", "fan1_rpm",
         ])
 
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+    # Forward stderr straight to our terminal so powermetrics errors
+    # (e.g. unknown sampler name on this macOS version) are visible to
+    # the user rather than silently swallowed by a captured pipe.
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=None,
                             text=True, bufsize=1)
 
     buf_lines: list[str] = []
+    samples_emitted = 0
 
     def flush_sample() -> None:
+        nonlocal samples_emitted
         if not buf_lines:
             return
         sample = parse_sample("\n".join(buf_lines))
@@ -205,6 +214,7 @@ def main() -> int:
             write_csv_row(csv_writer, sample)
             csv_file.flush()
         buf_lines.clear()
+        samples_emitted += 1
 
     def shutdown(_signum=None, _frame=None) -> None:
         flush_sample()
@@ -231,9 +241,40 @@ def main() -> int:
             buf_lines.append(line)
     except KeyboardInterrupt:
         pass
-    finally:
-        shutdown()
 
+    # If we got here, powermetrics' stdout pipe closed -- usually
+    # because powermetrics exited. Tell the user why if we never
+    # produced anything.
+    flush_sample()
+    rc = proc.poll()
+    if rc is None:
+        try:
+            proc.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        rc = proc.returncode
+    if csv_file:
+        csv_file.close()
+    if samples_emitted == 0:
+        print(f"\nERROR: powermetrics exited (rc={rc}) before any sample"
+              f" was parsed.", file=sys.stderr)
+        print("Most common causes:", file=sys.stderr)
+        print("  1. unknown sampler name for this macOS version. Try:",
+              file=sys.stderr)
+        print(f"     sudo powermetrics --samplers {args.samplers}"
+              f" -i {args.interval_ms} -n 1 -f text",
+              file=sys.stderr)
+        print("     directly to see the real error.", file=sys.stderr)
+        print("  2. powermetrics output format changed and the sample-",
+              file=sys.stderr)
+        print("     boundary regex no longer matches. To diagnose, run:",
+              file=sys.stderr)
+        print(f"     sudo powermetrics --samplers {args.samplers}"
+              f" -i {args.interval_ms} -n 2 -f text > /tmp/pm.txt",
+              file=sys.stderr)
+        print("     and share /tmp/pm.txt so the parser can be tuned.",
+              file=sys.stderr)
+        return 3
     return 0
 
 

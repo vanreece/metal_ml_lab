@@ -218,3 +218,175 @@ Branches:
   pair-timing.
 - **Inconclusive (N=2 not sufficient).** Run 006b at N=4 sessions
   before deciding.
+
+---
+
+## Result
+
+**Date run:** 2026-04-28 (linkage `raw/20260428T132113-cross-session.txt`)
+**Hardware:** Apple M4 Max 36GB / `applegpu_g16s` / macOS 26.4.1
+**Session A:** 005 prefix `20260428T132113`, 119.56 s wall
+**Idle gap:** 1800.00 s (30 min, exactly as pre-registered)
+**Session B:** 005 prefix `20260428T135313`, 119.83 s wall
+**Outcome:** Mixed-pass — 3 of 4 trials pass the strict ≤ 1 %
+threshold; T1 is marginal at 2.77 %. The variance-reduction-across-
+sessions story is the headline.
+
+### Primary: cross-session ratio stability
+
+| trial | A_ratio_p50 | B_ratio_p50 | spread | A_ratio_rcv | B_ratio_rcv | verdict   |
+|-------|------------:|------------:|-------:|------------:|------------:|-----------|
+| T1    | 0.56560     | 0.55016     | **2.767 %** | 0.04700 | 0.01599 | **MARGINAL** |
+| T2    | 3.71901     | 3.71820     | **0.022 %** | 0.00596 | 0.00462 | **PASS**     |
+| T3    | 0.89173     | 0.89439     | **0.298 %** | 0.00754 | 0.00736 | **PASS**     |
+| T4    | 1.70383     | 1.69500     | **0.519 %** | 0.01865 | 0.22201 | **PASS**     |
+
+T2, T3, and T4 all clear the strict ≤ 1 % bar. T1 lands in the
+"marginal" 1-3 % band. T1 is the shortest trial (alone p50 ~37 µs,
+ratio ~0.55, only ~6× the dispatch-overhead floor of 6.4 µs), so its
+ratio is more sensitive to small absolute shifts in the overhead-
+dominated portion of either kernel. T2-T4 are 10-40× the floor and
+land cleanly.
+
+### Subsidiary 1 (the killer chart): trial-alone p50 vs ratio across sessions
+
+The whole point of pair timing is that *the ratio is stable even
+when absolute durations are not.* So compare what the underlying
+trial signal looks like in each session:
+
+| trial | A_alone_p50 | B_alone_p50 | shift  | A_alone_rcv | B_alone_rcv | rcv ratio A/B |
+|-------|------------:|------------:|-------:|------------:|------------:|--------------:|
+| T1    | 36 917      | 36 750      | -0.45 % | 0.01086    | 0.00924     | 1.18×         |
+| T2    | 248 667     | 248 709     | +0.02 % | **0.33527** | **0.00099** | **335×!**     |
+| T3    | 59 417      | 59 417      |  0.00 % | 0.00363    | 0.00468     | 0.78×         |
+| T4    | 112 417     | 112 542     | +0.11 % | **0.33171** | **0.00384** | **86×**       |
+
+**T2's alone robust_cv differed by a factor of 335× between
+sessions** (0.335 in A vs 0.001 in B), yet the ratio cv was 0.006
+vs 0.005 — essentially identical — and the ratio p50 matched to
+0.022 %. T4 shows the same pattern (86× cv difference alone, but
+ratio p50 within 0.52 %). This is exactly the variance-cancellation
+mechanism decision 003 originally hypothesized:
+
+- Session A happened to land T2 in M4 Max's bimodal fma_iters band
+  (per the 004 M4 Max addendum, iters=4096 has 1.81× sweep variation).
+- Session B happened to skip the bimodal state entirely.
+- The reference kernel saw the same chip state as T2 in each session
+  (because the inter-encoder gap is now ~833 ns, not ~42 µs as on
+  M1 Pro).
+- The ratio cancels the bimodal noise; both sessions report the
+  same 3.72× ratio.
+
+Interestingly, the trial-alone *medians* themselves are highly
+stable across sessions (all ≤ 0.5 % shift). So in this specific 30-
+min-gap test, the alone numbers also reproduced. That's a separate
+observation — it doesn't undermine pair timing, it just means the
+M4 Max isn't drifting *much* over a 30-min idle gap. Longer gaps
+or thermal-state changes could expose drift the ratio absorbs.
+
+### Subsidiary 2: reference kernel cross-session
+
+| condition  | A_ref_p50 | B_ref_p50 | shift  | A_ref_rcv | B_ref_rcv |
+|------------|----------:|----------:|-------:|----------:|----------:|
+| ref_alone  | 67 167    | 66 958    | -0.31 % | 0.00691  | 0.00369  |
+
+The reference itself is stable to 0.31 % across sessions — well
+within the 1 % criterion. The ref is doing its job as a stable
+baseline.
+
+### Subsidiary 3: inter-encoder gap cross-session
+
+| trial | A_gap_p50 | B_gap_p50 | shift   |
+|-------|----------:|----------:|--------:|
+| T1    | 1 062     | 875       | -17.65 %|
+| T2    | 792       | 834       |  +5.30 %|
+| T3    | 792       | 834       |  +5.30 %|
+| T4    | 875       | 833       |  -4.80 %|
+
+The inter-encoder gap stays in the 800-1100 ns range across both
+sessions on M4 Max (vs ~42 000 ns on M1 Pro). T1 has the largest
+relative shift (17.65 %), but the absolute change is 187 ns — well
+inside the noise of a single dispatch. The gap is **not** drifting
+in a way that should affect ratio stability.
+
+### Pre-registered branch landed on
+
+This is the **"mixed results"** branch from the post-experiment
+plan: 3 of 4 PASS, 1 MARGINAL. Per the pre-registration:
+
+> Mixed results. Write decision 005 narrowing the M4 Max pair-
+> timing scope per which trial characters pass; pre-register a
+> small focused investigation of why the failing cases failed.
+
+The "narrowing" is light: pair timing PASSES for trials whose
+duration is ≥ 10× the dispatch-overhead floor (T2, T3, T4) and is
+MARGINAL for trials close to the floor (T1, ~6× the floor). The
+operational rule: when designing a new measurement, target trial
+durations ≥ ~64 µs (10 × 6.4 µs floor on M4 Max) and pair timing
+gives both within-session variance reduction and cross-session
+stability.
+
+T1 itself is not "broken" — its ratio is reproducible to 2.77 %,
+which is plenty of resolution for many questions. The MARGINAL
+classification is a flag, not a veto.
+
+### Surprises
+
+#### 1. Alone medians were also stable across sessions
+
+The pre-registration anticipated that absolute trial p50s would
+drift even if ratios stayed stable. In this 30-min-gap test on M4
+Max with both sessions on AC power, the alone p50s drifted by
+≤ 0.5 % across all four trials. The ratio's value-add here is in
+absorbing CV variation, not in absorbing median drift. Whether
+median drift appears at longer gaps or under thermal/AC-state
+changes is the natural follow-up question.
+
+#### 2. The 335× CV difference for T2 alone
+
+T2's session A alone cv was 0.335 — a value typical of M4 Max's
+bimodal fma_iters band that 004 documented. T2's session B alone cv
+was 0.001 — at quantization floor. Neither session was "wrong"; both
+are valid samples of T2's distribution under different chip
+microstates. The ratio cv was 0.006 vs 0.005 in the same two
+sessions. **This is the strongest single-experiment evidence we
+have that pair timing is the right primary methodology on M4 Max.**
+
+#### 3. Session B's reference cv is tighter than session A's
+
+Ref alone cv: A=0.00691, B=0.00369 — almost 2× tighter in B. The
+reference is not a constant-character measurement either; it sits
+in whatever DVFS/state the chip is in at each session start. The
+ratio's job is to cancel this — and it does. Session B happened to
+catch the chip in a marginally tighter state across the board (also
+visible in the lower trial-alone cv).
+
+### What this means for decision 004
+
+Decision 004's status was "active on M1 Pro, *under review on M4
+Max*" pending this experiment. The data now supports a successor
+decision (005) that re-elevates pair timing as the primary
+methodology on M4 Max for any trial ≥ ~64 µs.
+
+Drafted as `decisions/005-restore-pair-timing-on-m4-max.md`.
+Decision 004 stays in place per the append-only discipline; its
+header gets updated to "superseded by 005 on M4 Max; remains active
+on M1 Pro."
+
+### New questions raised
+
+- **Does this hold at longer idle gaps?** 30 min showed alone p50s
+  stable to 0.5 %. 1 hr / overnight / cross-AC-vs-battery would
+  test whether ratio stability gracefully extends or breaks. A 006a
+  with a 4-hour gap would be cheap (just two more 005 invocations).
+- **What's the M4 Max equivalent of T1 that would clear the strict
+  bar?** A redux with shorter trials below the dispatch-overhead
+  floor would map out the failure boundary precisely.
+- **Why does T1 have higher session-A ratio cv (0.047) than T1 had
+  in 005 (0.011)?** The 4× cv inflation is unexplained — possibly a
+  state difference between the morning 005 run and session A, but
+  not characterized.
+- **Did powermetrics interference matter?** Both 006 sessions had
+  `EXP005_NO_POWERMETRICS` unset, but our gpu_telemetry script wasn't
+  running either. Future runs with active telemetry could let us
+  correlate ratio drift with observable chip state.

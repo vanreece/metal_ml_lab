@@ -1,0 +1,19 @@
+experiment: 006-cross-session-ratio-stability
+timestamp: 20260428T132113
+session_gap_s: 1800
+session_a_prefix: 20260428T132113
+session_b_prefix: 20260428T135313
+session_a_wall_start_ns: 10151418492208
+session_a_wall_end_ns:   10270976552875
+session_a_wall_clock_s: 119.56
+sleep_actual_s:         1800.00
+session_b_wall_start_ns: 12070982125250
+session_b_wall_end_ns:   12190815008666
+session_b_wall_clock_s: 119.83
+chip: arm  machine: arm64
+os: macOS-26.4.1-arm64-arm-64bit-Mach-O
+python: 3.14.4 (main, Apr 14 2026, 14:46:33) [Clang 22.1.3 ]
+a_device: Apple M4 Max
+a_architecture: applegpu_g16s
+b_device: Apple M4 Max
+b_architecture: applegpu_g16s

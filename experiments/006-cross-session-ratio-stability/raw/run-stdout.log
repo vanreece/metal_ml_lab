@@ -1,0 +1,19 @@
+006 cross-session orchestrator  ts=20260428T132113
+session gap: 1800s (30 min)
+
+========== session A: launching 005/run.py ==========
+  cwd: /Users/vanreece/dev/metal_ml_lab/experiments/005-paired-ratio-stability
+  cmd: caffeinate -d -i -m uv run run.py
+  done in 119.6s, new prefix: 20260428T132113
+
+========== sleeping 1800s before session B ==========
+  slept 1800.0s
+
+========== session B: launching 005/run.py ==========
+  cwd: /Users/vanreece/dev/metal_ml_lab/experiments/005-paired-ratio-stability
+  cmd: caffeinate -d -i -m uv run run.py
+  done in 119.8s, new prefix: 20260428T135313
+
+wrote 20260428T132113-cross-session.txt
+
+Done.
