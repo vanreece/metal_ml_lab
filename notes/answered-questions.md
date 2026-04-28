@@ -227,6 +227,117 @@ and a measurement protocol that does not contaminate it).
 **Hardware/software:** Apple M1 Pro 16GB, macOS 26.3.1, AC power.
 **Closed by:** experiment 004.
 
+## Does paired co-encoded ratio timing reduce within-session variance vs single-kernel timing?
+
+**Answer:** No, on M1 Pro for kernels in the 50-400 µs duration
+range. Across 4 trial kernels (T1 fma_loop iters=512, T2 fma_loop
+iters=4096, T3 write_tid 524K threads, T4 write_tid 1M threads)
+each measured both alone and paired with the reference (fma_loop
+iters=1024 at 32t), the paired ratio's robust cv was equal to or
+**worse** than the trial-alone robust cv in every case:
+
+| trial | alone robust_cv | ratio robust_cv | verdict        |
+|-------|----------------:|----------------:|----------------|
+| T1    |          0.0095 |          0.0112 | ratio ≈ alone  |
+| T2    |          0.0012 |          0.0057 | **4.75× worse** |
+| T3    |          0.0346 |          0.0374 | ratio ≈ alone  |
+| T4    |          0.0392 |          0.0410 | ratio ≈ alone  |
+
+Mechanism: variance composition for ratios of independent measurements
+is `cv²(A/B) ≈ cv²(A) + cv²(B)`. The ratio inherits noise from both
+the trial and the reference rather than canceling shared noise,
+because the dominant within-session noise sources for kernels at
+warm steady state (timestamp quantization, OS scheduling /
+preemption, per-encoder setup variance) are not state that's
+shared between two encoders 42 µs apart in the same command buffer.
+The "ratios cancel DVFS variance" intuition only applies when DVFS
+variance is the dominant noise source, which it isn't inside a
+2-minute hot run.
+
+**Practical consequence:** for within-session cv-bound questions,
+single-kernel timing with N samples and robust statistics is the
+right tool. Pair timing is *not* a variance reducer and should not
+be invoked for that purpose. See decisions/004-narrowed-pair-timing-scope.md
+for the narrowed operating envelope.
+
+**Hardware/software:** Apple M1 Pro 16GB, macOS 26.3.1, AC power.
+**Closed by:** experiment 005.
+**Still open for:** kernels at much longer durations (>1 ms) where
+DVFS state changes might happen mid-run (untested); cross-session
+ratio stability (which is a different question).
+
+## Does paired co-encoded timing perturb the trial's underlying behavior?
+
+**Answer:** No. Across all 4 trial kernels in 005, the trial's
+median when measured paired vs alone shifted by less than ±1 % (T1
+-0.93%, T2 -0.13%, T3 -0.68%, T4 +0.81%). The reference dispatch
+that immediately precedes the trial inside the same command buffer
+does not meaningfully change the trial's behavior.
+
+**Practical consequence:** any per-trial number from a paired
+measurement can be compared directly to a single-kernel measurement
+of the same kernel. Pair timing does not introduce a systematic bias
+on the trial.
+
+**Hardware/software:** Apple M1 Pro 16GB, macOS 26.3.1, AC power.
+**Closed by:** experiment 005.
+
+## Is the paired ratio stable across within-session sweep repetitions?
+
+**Answer:** Yes, within ~1 %. Across 3 sweep repetitions of the
+same paired conditions with 30 s between-sweep cooldowns, the
+ratio's per-sweep median agreed within:
+
+| trial | spread |
+|-------|-------:|
+| T1    |  0.23% |
+| T2    |  0.20% |
+| T3    |  0.98% |
+| T4    |  0.60% |
+
+T3 sits right at the boundary, mostly reflecting T3 itself being
+the noisiest trial (alone robust_cv = 0.035) rather than ratio-
+specific drift.
+
+**Practical consequence:** within a single script invocation, the
+paired ratio is a stable relative-magnitude metric. "Kernel A is
+~0.54× kernel B's duration on this chip in this session" is a
+sound claim if A and B are paired with the same reference.
+
+**Hardware/software:** Apple M1 Pro 16GB, macOS 26.3.1, AC power.
+**Closed by:** experiment 005.
+**Still open for:** cross-session ratio stability (untested; a
+follow-up experiment would run the same conditions across separate
+process invocations / time-of-day / thermal states).
+
+## What is the inter-encoder gap inside a single MTLCommandBuffer on M1 Pro?
+
+**Answer:** ~42 µs at p50, with low variance (p95 in [46, 48] µs,
+p99 in [49, 74] µs across 4 trial kinds × 900 paired measurements
+each). Two consecutive `MTLComputeCommandEncoder` passes inside a
+single `MTLCommandBuffer` are *not* atomically tight; the GPU
+front end inserts substantial idle time between them.
+
+This is roughly 4 × the dispatch-overhead floor (~9 µs) and is
+consistent across kernel kind (fma_loop and write_tid), suggesting
+it's a property of the encoder model itself rather than of the
+trial kernel. Mechanism (per-encoder setup cost, GPU front-end
+stall, command-list reordering) not isolated.
+
+**Practical consequence:** any analysis that depends on "ref and
+trial in the same chip state" inside a paired command buffer has
+~42 µs of resolution limit. For DVFS / thermal state changes that
+happen on millisecond-or-longer timescales, this is fine; for
+cycle-accurate or sub-microsecond comparisons, the same-buffer
+pattern is not tight enough.
+
+**Hardware/software:** Apple M1 Pro 16GB, macOS 26.3.1, AC power,
+PyObjC + `MTLCounterSamplingPointAtStageBoundary`.
+**Closed by:** experiment 005.
+**Still open for:** whether different encoder patterns (separate
+command buffers, explicit barriers, queue properties) reduce the
+gap; whether the gap differs on M4 Max.
+
 ## What is the GPU timestamp counter's hardware tick resolution on M1 Pro?
 
 **Answer:** ~24 MHz (one tick ≈ 41.67 ns). Apparent in 001's back-to-back

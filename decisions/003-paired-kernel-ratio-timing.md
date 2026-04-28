@@ -1,8 +1,8 @@
 # 003: Adopt paired-kernel ratio timing as the primary measurement methodology (pending 005 validation)
 
 **Date:** 2026-04-27
-**Status:** active, pending validation by experiment 005
-**Confidence:** medium
+**Status:** superseded by [decision 004](004-narrowed-pair-timing-scope.md) — variance-reduction claim falsified by experiment 005; technique narrowed to median-preserving / sweep-stable / tail-suppressing relative metric (with cross-session stability still pending).
+**Confidence:** medium (at the time of writing)
 
 ## Context
 

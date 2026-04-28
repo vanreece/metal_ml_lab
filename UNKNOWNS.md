@@ -61,6 +61,25 @@ answer and a link to the experiment that closed it, then moves to
   duration band (~0.4-1.6 ms dispatches), but are stable everywhere
   else. Plausibly related to 002's "1-10 ms transition zone" of the
   GPU power state machine, but we have not measured directly.
+- **NEW from 005: Does paired-encoder ratio timing remain stable
+  across separate script invocations?** Within-session ratio
+  stability is established (≤1% drift across 3 sweeps, per 005).
+  Cross-session stability (different process, different time of
+  day, different thermal state) is the strongest remaining
+  justification for pair timing as a primary methodology and is
+  untested. A 006 experiment running the same paired conditions
+  twice with a 1-hour gap would close this. Decision 004's
+  cross-session validity is contingent on it.
+- **NEW from 005: What sets the ~42 µs inter-encoder gap inside a
+  single MTLCommandBuffer, and can it be reduced?** Two consecutive
+  `MTLComputeCommandEncoder` passes in one cb are separated by a
+  p50 idle of ~42 µs (range 8-50 µs at p99). This is ~4× the
+  dispatch-overhead floor and means "same buffer = same chip state"
+  is approximate, not exact. Mechanism unclear: per-encoder setup
+  cost, command-list reordering, GPU front-end stall? Inspecting
+  the `MTLCommandBuffer` ordering semantics or trying alternative
+  encoding patterns (separate cbs with different ordering, command
+  buffer encoders with explicit barriers) might distinguish.
 - **NEW from 003: Does the calibration kernel as thermometer have
   enough resolution to distinguish power states without disturbing
   them?** Partial answer: a 10-dispatch probe can tell hot vs cool
