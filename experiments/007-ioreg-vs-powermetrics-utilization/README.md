@@ -221,3 +221,144 @@ Branches:
   different window?). May still be useful as a *different* signal
   but doesn't replace powermetrics. Pre-register a follow-on to
   characterize the difference.
+
+---
+
+## Result
+
+**Date run:** 2026-04-28 (timestamp prefix `20260428T141616`)
+**Hardware:** Apple M4 Max 36GB / `applegpu_g16s` / macOS 26.4.1
+**Wall-clock:** 60.0 s (10 s baseline + 5×8 s staircase + 10 s tail)
+**Outcome:** **FAIL** — but in a specific, mechanism-revealing way.
+
+### Headline
+
+ioreg's `Device Utilization %` field does NOT update at a cadence
+useful for 100 ms sampling. Out of **601 ioreg samples**, **599
+returned `0`** (regardless of phase or actual GPU load) and only
+**2 returned non-zero** (55 and 52, both within the same 700 ms
+window in `step_025pct`). powermetrics' `gpu_active_pct` over the
+same period correctly tracked the staircase from 0 % to 99.8 %.
+
+| phase / target |  n_bins | mean_ioreg % | mean_pm % | mean diff (pp) |
+|----------------|--------:|-------------:|----------:|---------------:|
+| baseline (0 %) |      95 |       0.0    |    15.2   |    -15.18      |
+| step_000pct    |      77 |       0.0    |    14.0   |    -14.04      |
+| **step_025pct**|      76 |   **1.4** *  |    67.8   |    -66.40      |
+| step_050pct    |      76 |       0.0    |    98.4   |    -98.35      |
+| step_075pct    |      76 |       0.0    |    99.1   |    -99.13      |
+| step_100pct    |      76 |       0.0    |    99.8   |    -99.79      |
+| tail           |      94 |       0.0    |    25.4   |    -25.36      |
+
+\* The 1.4 % mean for step_025pct is entirely from the two single-
+sample updates; every other sample in that step was 0.
+
+Overall median |diff| = **65.71 pp**, p95 = 100 pp, max = 100 pp.
+Per the pre-registered thresholds (PASS ≤5 pp, MARGINAL ≤10 pp,
+FAIL >10 pp), this is solidly FAIL.
+
+### Mechanism
+
+The 2 non-zero samples landed 700 ms apart in step_025pct. Their
+values (55 % device, 5-6 % renderer, 2-3 % tiler) are both
+plausible — *they look like a real internal driver snapshot* — but
+they're isolated. Renderer/Tiler fields show the same pattern
+(599 zeros, 2 non-zero, same indices).
+
+Best explanation: **the AGX driver computes Device/Renderer/Tiler
+Utilization % on its own internal cadence (probably seconds) and
+writes the result into the IORegistry property dict for ioreg to
+read.** The driver-side update is sparse, the field is "the latest
+internal sample," and at 100 ms cadence we mostly catch stale
+zeros from before the driver's next sample arrives.
+
+Sanity check that we're reading the right node: the
+`In use system memory` field in the same `PerformanceStatistics`
+dict tracked the workload — 1.261 GB at baseline rising to 1.656
+GB during step_050pct and back down. That's a different field with
+different update semantics: it's the live MTLBuffer-allocated
+total, not a periodically-published average.
+
+### What this means
+
+- **ioreg is NOT a sudo-free substitute for powermetrics
+  utilization.** Not at 100 ms cadence; probably not at 1 s either
+  given the observed update density.
+- The agent-survey's recommendation that ioreg `Device
+  Utilization %` is a clean "is the GPU busy right now" signal
+  *was wrong*. The field exists and has the right semantics in
+  principle, but the driver's update cadence makes it useless for
+  microbench-scale telemetry.
+- The agent's IOReport recommendation is **untested but more
+  promising** because IOReport uses the
+  `IOReportCreateSamples` → `IOReportCreateSamplesDelta` pattern
+  — the consumer asks for state at two timestamps and computes
+  the delta itself, rather than depending on the driver's internal
+  publishing cadence.
+
+### Surprises
+
+#### 1. The renderer/tiler split when ioreg DID report
+
+The two non-zero samples reported `device=55, renderer=6, tiler=3`
+and `device=52, renderer=5, tiler=2`. The "device" number is much
+higher than the renderer or tiler share — possibly "device"
+includes compute work (which our fma_loop kernel is) while
+renderer/tiler are graphics-pipeline-specific. Useful to remember
+if we ever DO use these fields: "Device Utilization %" is the
+all-up signal, "Renderer/Tiler" are graphics-only.
+
+#### 2. powermetrics baseline of 14-25 %
+
+Even at "0 % busy" baseline and tail phases, powermetrics reported
+14-25 % GPU active residency. That's other apps' GPU activity
+(WindowServer compositing, Brave/Chrome rendering, etc.) — not
+noise. The "GPU at idle" assumption is wrong on a normal
+interactive desktop; "GPU at idle minus user apps" requires
+killing the compositor or running headless.
+
+#### 3. The InUseMem field IS useful
+
+`In use system memory` from the same PerformanceStatistics dict
+went from 1.26 GB at baseline to 1.66 GB at peak workload — clean
+correlation with the dispatch buffer allocation. Not what we
+came for, but a free observation: ioreg DOES give us a usable
+"GPU memory in use" signal at 100 ms cadence even when its
+utilization fields don't work.
+
+### What this changes
+
+- **Decision: do not use ioreg utilization in any future
+  experiment.** The field is too sparsely updated to be useful.
+- The agent-survey's storage / architecture recommendations are
+  unaffected by this result — they didn't depend on ioreg working.
+- `gpu_telemetry.py`'s sudo dependency stays for now. The
+  user-runs-sudo workflow is the available path until IOReport is
+  validated.
+
+### After this experiment
+
+Branch landed on: **FAIL**. Per the pre-registration:
+
+> FAIL. ioreg's utilization measures something different from
+> powermetrics. Investigate what it actually measures
+> [...] Pre-register a follow-on to characterize the difference.
+
+The "what does ioreg actually measure" question is partially
+answered above (a sparsely-updated driver-published number). A
+deeper characterization isn't worth doing — the operational
+finding is that ioreg utilization is unsuitable for our purposes,
+which is enough.
+
+The right next experiment is **exp 008: IOReport `GPU Energy`
+delta vs powermetrics `GPU Power`** — same comparison structure,
+different (and more promising) source. IOReport requires writing
+ctypes bindings against `/usr/lib/libIOReport.dylib`, so it's
+~2-3× the implementation cost of 007, but the agent's research
+suggests it's the right path for a sudo-free telemetry stack.
+
+Optional intermediate step: `exp 007a` could just shell out to
+`macmon` (Rust binary using IOReport) if installed, sidestepping
+the binding work for a first pass. Then if IOReport-via-macmon
+agrees with powermetrics, the binding work for an in-process
+collector becomes worth the investment.
