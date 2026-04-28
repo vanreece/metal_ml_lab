@@ -516,6 +516,14 @@ For any later microbench:
    small-K of an arithmetic-heavy kind is strictly worse than no
    warmup at all (cv 1.4-3.8 vs 0.1-0.3). Either don't warmup, or
    warmup substantially (K≥5).
+
+   > **Update (2026-04-28, post-M4-Max-rerun):** does NOT generalize
+   > to M4 Max. On `applegpu_g16s` / macOS 26.4.1, `fma_loop K=1` is
+   > one of the *cleaner* recipes (cv ≤ 0.19 across all cadences),
+   > and `same K=1` becomes the destabilizer (cv 0.587 / 1.183 at
+   > sleep_10ms / sleep_100ms). The destabilizer-warmup-kind inverted
+   > from M1 Pro to M4 Max. See M4 Max addendum below.
+
 4. **Treat the 5.4 µs floor as a real possibility** that some entry
    conditions can hit — kernels you previously thought were running
    "as fast as they can" at 8 µs may have a faster regime hidden in
@@ -581,3 +589,225 @@ arithmetic intensity).
 of "does display state matter" can wait; we have the controlled
 recording in metadata for any later run, and the more interesting
 findings from 003 push higher up the priority queue.
+
+---
+
+## M4 Max addendum (re-run on new hardware)
+
+**Date re-run:** 2026-04-28
+**Hardware:** Apple M4 Max 36GB / `applegpu_g16s`, MacBook Pro 14"
+(Mac16,6), 14-core (10P+4E), AC power
+**OS:** macOS 26.4.1 (build 25E253)
+**Raw data:** `raw/20260428T113232-{measured,calibration}.csv`,
+`raw/20260428T113232-meta.txt`
+**Wall-clock duration:** 594.75 s (essentially identical to M1 Pro's
+594.9 s — most of the budget is per-cadence sleep × K_values × kinds).
+**Powermetrics:** intentionally skipped (`EXP003_NO_POWERMETRICS=1`).
+
+The M4 Max version of 003 was very different from the M1 Pro version
+because 002's M4 Max re-run had already shown the chip's DVFS picture
+is qualitatively different (no 1ms nightmare zone, smaller cool-cadence
+spread, lower floor). 003's premise — "warmup should fix the noisy
+cadences" — has less work to do because there are fewer noisy cadences
+to fix in the first place. But several findings from M1 Pro 003 do
+NOT generalize, and one new state was observed.
+
+### Headline cv recovery table (each cell: p50_ns / cv)
+
+#### warmup_kind = `same` (write_tid 32t, identical to measured)
+
+| sleep_s | K=0          | K=1            | K=5            | K=20           |
+|---------|--------------|----------------|----------------|----------------|
+| 0       | 6917 / 0.110 | 6771 / 0.057   | 6708 / 0.092   | 6771 / **0.848** ⚠ |
+| 0.001   | 9042 / 0.108 | 6417 / 0.118   | 6709 / 0.040   | 6500 / 0.114   |
+| 0.01    | 8771 / 0.071 | 8708 / **0.587** ⚠ | 6792 / 0.149 | 6792 / **3.326** ⚠ |
+| 0.1     | 9229 / **1.962** ⚠ | 6979 / **1.183** ⚠ | 6708 / **2.800** ⚠ | 6584 / 0.611 |
+| 1.0     | 9270 / 0.170 | 6646 / 0.135   | 6417 / 0.064   | 6375 / **0.035** |
+
+#### warmup_kind = `heavy_write` (write_tid 1024t)
+
+| sleep_s | K=0          | K=1          | K=5          | K=20         |
+|---------|--------------|--------------|--------------|--------------|
+| 0       | 6416 / 0.029 | 6666 / 0.079 | 6604 / 0.034 | 6542 / 0.094 |
+| 0.001   | 8959 / 0.078 | 6584 / 0.079 | 6438 / 0.035 | 6458 / 0.038 |
+| 0.01    | 8980 / 0.084 | 8771 / 0.137 | 6708 / 0.165 | 6667 / 0.141 |
+| 0.1     | 9250 / 0.069 | 6479 / 0.105 | 6458 / 0.088 | 6479 / 0.147 |
+| 1.0     | 9354 / 0.083 | 6375 / 0.070 | 6584 / 0.108 | 6438 / 0.052 |
+
+#### warmup_kind = `fma_loop` (32t arithmetic-heavy)
+
+| sleep_s | K=0          | K=1          | K=5          | K=20         |
+|---------|--------------|--------------|--------------|--------------|
+| 0       | 6625 / 0.036 | 6542 / 0.038 | 6417 / 0.031 | **6375 / 0.270** 🌟 |
+| 0.001   | 8958 / 0.080 | 6542 / 0.040 | 6562 / 0.043 | 6396 / 0.076 |
+| 0.01    | 9000 / 0.064 | 8667 / 0.137 | 6604 / 0.182 | 6480 / 0.077 |
+| 0.1     | 9104 / 0.087 | 6625 / 0.116 | 6750 / 0.095 | 6417 / 0.051 |
+| 1.0     | 9458 / 0.149 | 6750 / 0.189 | 6750 / 0.123 | 6708 / 0.085 |
+
+⚠ = unexpectedly high tail. 🌟 = sub-floor state observed
+(see Surprise § 2 below — 11 of 40 trials in this combo dropped to
+2-4 µs, with absolute min = 2083 ns).
+
+### Side-by-side: which warmup recipe works best on each chip?
+
+| chip      | best warmup recipe                  | worst warmup recipe                      |
+|-----------|-------------------------------------|------------------------------------------|
+| M1 Pro    | `same K=1` (cv ≤ 0.16 everywhere)   | `fma_loop K=1` (cv 1.4-3.8 — destabilizer) |
+| M4 Max    | `heavy_write K=1` or `fma_loop K=1` (cv ≤ 0.19 everywhere) | `same K=1`/`K=5` (cv 0.59-2.80 at sleep_10ms-100ms) |
+
+**The ranking of warmup kinds inverted between G13 and G16.** The
+recipe that worked best on M1 Pro (`same K=1`, identical to the
+measured kernel) is a destabilizer on M4 Max. The recipe that was the
+M1 Pro destabilizer (`fma_loop K=1`, arithmetic-heavy single warmup)
+is one of the cleanest on M4 Max.
+
+### Five qualitative shifts G13 → G16 in 003
+
+1. **`same K=1` flipped from the safest recipe to a destabilizer.**
+   On M1 Pro, `same K=1` had cv ≤ 0.16 across all cadences and was
+   the recommended recipe. On M4 Max, `same K=1` produces cv 0.587 at
+   sleep_10ms and 1.183 at sleep_100ms with tails to 34 µs and 53 µs
+   respectively. Mechanism unknown — speculation: when the chip is
+   already at the back-to-back floor, adding one more identical light
+   dispatch may keep it in a marginal micro-state where the next
+   dispatch is unstable. Heavier or more sustained warmup pushes
+   through this.
+2. **`fma_loop K=1` is no longer destabilizing.** The headline finding
+   of M1 Pro 003 — that one arithmetic-heavy warmup dispatch breaks
+   the next measurement — does not reproduce on M4 Max. cv at
+   `fma_loop K=1` is 0.038-0.189 across all cadences (vs M1 Pro's
+   1.4-3.8). Either the G16 front-end handles the kernel-character
+   transition better, or the relevant pipeline-state aliasing
+   doesn't apply on the newer architecture.
+3. **`heavy_write` is the most robust warmup kind on M4 Max.** Every
+   `heavy_write` cell has cv ≤ 0.165. No tail outliers anywhere.
+   On M1 Pro, `heavy_write` was OK but had its own surprise (`K=1
+   sleep_1s` cv = 1.62). M4 Max `heavy_write K=1 sleep_1s` is cv =
+   0.07 — clean.
+4. **Cool-cadence median recovery still works** — K=1 of any warmup
+   kind brings the median from ~9 µs (cool, K=0) back toward the
+   ~6.4-6.8 µs floor across sleep_1ms onwards. Same operational
+   recipe, just at lower absolute numbers (M1 Pro recovered to ~9.7 µs
+   floor; M4 Max recovers to ~6.4 µs floor).
+5. **Tail outliers are concentrated in `same` warmup combos on
+   M4 Max.** Across 60 (kind, K, cadence) combos, only 4 had any
+   single dispatch above 50 µs — and **all 4 are `same` warmup**
+   (K=0 sleep_0.1: max=123 µs; K=1 sleep_0.1: max=53 µs; K=5
+   sleep_0.1: max=126 µs; K=20 sleep_0.01: max=148 µs). On M1 Pro,
+   tail outliers concentrated in `fma_loop` (5 of 7). Inverted again.
+
+### Surprises
+
+#### 1. The fma_loop K=1 destabilizer story does not generalize
+
+The M1 Pro 003 headline that "a single arithmetic-heavy warmup
+destabilizes the next measurement" was a clean, sharp finding with
+clear mechanism speculation (kernel-character switch). On M4 Max it
+just doesn't happen. This is the single biggest piece of evidence
+that **warmup-recipe characterization is chip-specific and may not
+transfer at all between Apple Silicon generations.** Cross-chip
+warmup-recipe libraries are not viable.
+
+#### 2. A sub-floor ~2 µs settled state exists on M4 Max — reached late in fma_loop K=20 sleep_0
+
+M1 Pro 003 stumbled into a 5.4 µs state in its very first combo
+(later filed as non-reproducible by 004). M4 Max 003 stumbled into a
+**~2-4 µs state** in the LAST trials of one specific combo:
+`fma_loop K=20 sleep_0`.
+
+The trial-by-trial trajectory of that combo (40 dispatches) is:
+- Trials 0-23: 6.2-6.9 µs (normal floor)
+- Trial 24: 9.8 µs (one outlier)
+- Trials 25-28: 6.3-7.1 µs (back to floor)
+- **Trials 29-39: 4.0, 3.9, 2.9, 4.2, 3.0, 2.8, 3.3, 3.1, 2.5, 2.3,
+  2.1 µs** — the chip dropped into a faster state and stayed there,
+  with the absolute min at 2083 ns (final trial).
+
+The 2083 ns min is **roughly 50 ticks** of the 24 MHz GPU timestamp
+clock (2083 / 41.67 ≈ 50). For comparison, the back-to-back floor
+of 6125 ns is ~147 ticks. So the chip transitioned to operate at
+roughly a third of the cycle count it normally takes for the same
+write_tid 32t kernel — strongly suggesting a step-up in GPU clock
+frequency (DVFS upshift) sustained across the rest of the combo.
+
+This combo has 40 measured trials × 20 fma_loop warmup dispatches
+each = 800 cumulative warmup dispatches before the state shift,
+plus 10 calibration probe dispatches. The calibration probe entering
+this combo looked normal (6.3-9.9 µs range, settled by mid-burst).
+The transition is not at the start; it builds up. None of the other
+59 combos produced any sample below 5500 ns — this is uniquely the
+heaviest-warmup × sleep_0 × arithmetic configuration.
+
+**Operational implication:** the ~6.4 µs floor measured in 001/002
+on M4 Max (and again as the K=0 baseline here) is *not* the lowest
+state the chip can reach. With sustained arithmetic warmup at
+sleep_0, the chip can push into a higher-DVFS state ~3× faster.
+Whether this state is reproducible across runs (vs. a single-run
+artifact like M1 Pro's 5.4 µs floor) is **the most important
+follow-up question** from this re-run.
+
+#### 3. The `same K=20 sleep_10ms` outlier is huge
+
+cv = 3.326, max = 148 µs (~22× p50). This is the largest-tail combo
+in the entire 003 M4 Max run. The same combo on M1 Pro had cv = 0.12.
+A specific recipe that was clean on M1 Pro is now the noisiest on
+M4 Max. No clear mechanism.
+
+#### 4. The calibration-probe-as-warmup observation is unchanged
+
+The cal_med_of_rest values across all 60 combos sit between
+~6.3-7.1 µs — a tighter and lower band than M1 Pro's ~9-10 µs
+calibration tail. The chip converges to a similar warm state by
+mid-burst regardless of where it started, just like on M1 Pro, but at
+the M4 Max-floor level. The structural observation that "the
+calibration probe is itself a 10-dispatch warmup" still applies — the
+"K=0" cv numbers in the recovery tables above are "K=0 measured
+trials, but after a 10-probe warmup happened ~1 sleep_s ago."
+
+### What this means operationally on M4 Max
+
+The M1 Pro decision rules (decision-relevant guidance from M1 Pro
+003) need to be re-derived per chip. New M4 Max guidance, based on
+this single run:
+
+1. **K=1 untimed warmup of `heavy_write` (write_tid 1024t) before
+   each measurement** is the safest recipe across cadences (cv ≤
+   0.165 in every cell). Use this as the default on M4 Max.
+2. **`fma_loop K=1`** is also viable (cv ≤ 0.19) and may be
+   appropriate when measuring arithmetic-heavy kernels for
+   character-matched warmup.
+3. **AVOID `same K=1` and `same K=5` at sleep_10ms-100ms cadences**
+   on M4 Max. Inverted from M1 Pro guidance.
+4. **At sleep_0**, K=0 on M4 Max is fine for `heavy_write` and
+   `fma_loop` (the chip stays at floor); `same K=0` at sleep_0 also
+   works. Consistent with M1 Pro's "no warmup at sleep_0" guidance,
+   though the mechanism may be different.
+5. **Treat the ~2 µs state observed in `fma_loop K=20 sleep_0` as
+   the M4 Max analog of M1 Pro's 5.4 µs floor** — possibly a real
+   reachable state, possibly a single-run artifact. Do not optimize
+   against it until reproducibility is established.
+
+### New questions raised by the M4 Max re-run
+
+- **Is the M4 Max sub-floor state reproducible?** Run a 003a-style
+  small experiment that does only `fma_loop K=20 sleep_0` for ~80
+  trials (twice the original combo) several times in a row, with
+  re-launches. If the state is reproducible, it expands the M4 Max
+  operating envelope downward.
+- **Why did `same K=1` flip from safest to destabilizer?** Could be
+  M4 Max front-end behavior, could be macOS 26.4.1 scheduler, could
+  be some interaction with Dynamic Caching (M3+ feature). Worth a
+  focused mechanism investigation only if `same` warmup matters
+  practically — for now, pick `heavy_write K=1` and move on.
+- **Does the warmup-recipe inversion show up at intermediate
+  generations?** Would need M2/M3 access to triangulate. Not in
+  scope for this lab right now.
+- **Did the calibration-probe-itself-is-warmup observation
+  contaminate K=0 differently on M4 Max than M1 Pro?** The cv numbers
+  for K=0 on M4 Max are mostly tight (0.03-0.15 except the
+  `same K=0 sleep_100ms` outlier at 1.96) — substantially better than
+  M1 Pro K=0 in the cool-cadence regime. This is consistent with the
+  002 finding that the M4 Max cool regime is itself less noisy
+  (sleep_1s cv 0.46 vs M1 Pro 0.21 in the opposite direction, but
+  sleep_100ms 1.64 vs M1 Pro 2.23 in the same direction). Hard to
+  isolate from the data we have.

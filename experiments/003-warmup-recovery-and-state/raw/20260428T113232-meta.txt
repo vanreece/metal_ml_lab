@@ -1,0 +1,128 @@
+experiment: 003-warmup-recovery-and-state
+timestamp: 20260428T113232
+device: Apple M4 Max
+registry_id: 4294968451
+architecture: applegpu_g16s
+chip: arm  machine: arm64
+os: macOS-26.4.1-arm64-arm-64bit-Mach-O
+python: 3.14.4 (main, Apr 14 2026, 14:46:33) [Clang 22.1.3 ]
+pyobjc: 12.1
+qos: pthread_set_qos_class_self_np -> 0
+power: Now drawing from 'AC Power'
+powermetrics: skipped (EXP003_NO_POWERMETRICS set)
+powermetrics_started_wall_ns: 4665625092458
+caffeinate: started pid=8845
+display_powerstate_start: Driver ID  Current State  Max State  Current State Description
+Internal failure: Failed to get power state information
+display_powerstate_end:   Driver ID  Current State  Max State  Current State Description
+Internal failure: Failed to get power state information
+pmset_assertions_start: |
+  2026-04-28 11:32:32 -0700 
+  Assertion status system-wide:
+     BackgroundTask                 0
+     PreventDiskIdle                1
+     ApplePushServiceTask           0
+     UserIsActive                   1
+     PreventUserIdleDisplaySleep    1
+     SoftwareUpdateTask             0
+     PreventSystemSleep             0
+     ExternalMedia                  0
+     InternalPreventDisplaySleep    1
+     PreventUserIdleSystemSleep     1
+     NetworkClientActive            0
+  Listed by owning process:
+     pid 395(powerd): [0x00000df000019186] 00:18:16 PreventUserIdleSystemSleep named: "Powerd - Prevent sleep while display is on"  
+     pid 395(powerd): [0x0000118c00109962] 00:02:52 InternalPreventDisplaySleep named: "com.apple.powermanagement.delayDisplayOff"  
+  	Timeout will fire in 127 secs Action=TimeoutActionTurnOff
+     pid 8840(caffeinate): [0x0000123700019e47] 00:00:01 PreventUserIdleSystemSleep named: "caffeinate command-line tool"  
+  	Details: caffeinate asserting on behalf of 'uv' (pid 8838)
+  	Localized=THE CAFFEINATE TOOL IS PREVENTING SLEEP.
+     pid 8840(caffeinate): [0x0000123700059e48] 00:00:01 PreventUserIdleDisplaySleep named: "caffeinate command-line tool"  
+  	Details: caffeinate asserting on behalf of 'uv' (pid 8838)
+  	Localized=THE CAFFEINATE TOOL IS PREVENTING SLEEP.
+     pid 8840(caffeinate): [0x00001237000f9e49] 00:00:01 PreventDiskIdle named: "caffeinate command-line tool"  
+  	Details: caffeinate asserting on behalf of 'uv' (pid 8838)
+  	Localized=THE CAFFEINATE TOOL IS PREVENTING SLEEP.
+     pid 454(WindowServer): [0x00000ab100098e26] 00:06:46 UserIsActive named: "com.apple.iohideventsystem.queue.tickle serviceID:100000d18 service:AppleHIDKeyboardEventDriverV2 product:Apple Internal Keyboard / Trackpad eventType:3"  
+  	Timeout will fire in 194 secs Action=TimeoutActionRelease
+     pid 8824(caffeinate): [0x0000122100019e37] 00:00:23 PreventUserIdleSystemSleep named: "caffeinate command-line tool"  
+  	Details: caffeinate asserting for 300 secs
+  	Localized=THE CAFFEINATE TOOL IS PREVENTING SLEEP.
+  	Timeout will fire in 276 secs Action=TimeoutActionRelease
+  Kernel Assertions: 0x100=MAGICWAKE
+     id=582  level=255 0x100=MAGICWAKE creat=  mod= description=en0 owner=IOSkywalkNetworkBSDClient
+experiment_started_wall_ns: 4665716447458
+experiment_ended_wall_ns:   5260468311791
+warmup_kinds: [('same', 'write_tid', 32, 32), ('heavy_write', 'write_tid', 1024, 32), ('fma_loop', 'fma_loop', 32, 32)]
+K_values: [0, 1, 5, 20]
+sleep_conditions_s: [0.0, 0.001, 0.01, 0.1, 1.0]
+n_per_combo: 40
+calibration_burst: 10
+floor_window: (8000, 8200)
+kernel_measured: write_tid 32 threads
+sampling_point: MTLCounterSamplingPointAtStageBoundary
+correlation_start: cpu=4665716444958 gpu=4665716444958
+correlation_end:   cpu=5260468341000 gpu=5260468341000
+experiment_wall_clock_s: 594.75
+
+per-combo summary (warmup_kind | K | sleep_s | min | p50 | p95 | p99 | max | cv | in_floor):
+  fma_loop    K= 0 sleep_s=0.0    min=   6000 p50=   6625 p95=   6921 p99=    7026 max=    7042 cv=0.0362 in_floor= 0/40
+  fma_loop    K= 0 sleep_s=0.001  min=   6708 p50=   8958 p95=   9336 p99=    9477 max=    9542 cv=0.0795 in_floor= 0/40
+  fma_loop    K= 0 sleep_s=0.01   min=   6500 p50=   9000 p95=   9337 p99=    9518 max=    9583 cv=0.0636 in_floor= 3/40
+  fma_loop    K= 0 sleep_s=0.1    min=   6583 p50=   9104 p95=  10479 p99=   10977 max=   11042 cv=0.0872 in_floor= 3/40
+  fma_loop    K= 0 sleep_s=1.0    min=   6417 p50=   9458 p95=  11627 p99=   14234 max=   15875 cv=0.1492 in_floor= 1/40
+  fma_loop    K= 1 sleep_s=0.0    min=   6000 p50=   6542 p95=   6919 p99=    6959 max=    6959 cv=0.0378 in_floor= 0/40
+  fma_loop    K= 1 sleep_s=0.001  min=   6167 p50=   6542 p95=   7085 p99=    7151 max=    7167 cv=0.0400 in_floor= 0/40
+  fma_loop    K= 1 sleep_s=0.01   min=   6125 p50=   8667 p95=   9430 p99=   10124 max=   10417 cv=0.1366 in_floor= 2/40
+  fma_loop    K= 1 sleep_s=0.1    min=   6167 p50=   6625 p95=   9049 p99=    9514 max=    9709 cv=0.1159 in_floor= 0/40
+  fma_loop    K= 1 sleep_s=1.0    min=   6250 p50=   6750 p95=  10037 p99=   11080 max=   11291 cv=0.1894 in_floor= 1/40
+  fma_loop    K= 5 sleep_s=0.0    min=   6125 p50=   6417 p95=   6798 p99=    6917 max=    6917 cv=0.0312 in_floor= 0/40
+  fma_loop    K= 5 sleep_s=0.001  min=   6083 p50=   6562 p95=   7010 p99=    7360 max=    7458 cv=0.0428 in_floor= 0/40
+  fma_loop    K= 5 sleep_s=0.01   min=   6000 p50=   6604 p95=   9091 p99=    9276 max=    9292 cv=0.1817 in_floor= 0/40
+  fma_loop    K= 5 sleep_s=0.1    min=   6125 p50=   6750 p95=   7450 p99=    9231 max=    9458 cv=0.0954 in_floor= 0/40
+  fma_loop    K= 5 sleep_s=1.0    min=   6125 p50=   6750 p95=   8582 p99=    9613 max=    9792 cv=0.1231 in_floor= 0/40
+  fma_loop    K=20 sleep_s=0.0    min=   2083 p50=   6375 p95=   6887 p99=    8752 max=    9792 cv=0.2699 in_floor= 0/40
+  fma_loop    K=20 sleep_s=0.001  min=   6042 p50=   6396 p95=   7008 p99=    8336 max=    9084 cv=0.0756 in_floor= 0/40
+  fma_loop    K=20 sleep_s=0.01   min=   6208 p50=   6480 p95=   7149 p99=    8553 max=    8667 cv=0.0770 in_floor= 0/40
+  fma_loop    K=20 sleep_s=0.1    min=   6125 p50=   6417 p95=   7335 p99=    7426 max=    7458 cv=0.0513 in_floor= 0/40
+  fma_loop    K=20 sleep_s=1.0    min=   6084 p50=   6708 p95=   7460 p99=    8720 max=    9500 cv=0.0846 in_floor= 0/40
+  heavy_write K= 0 sleep_s=0.0    min=   6125 p50=   6416 p95=   6627 p99=    6769 max=    6834 cv=0.0294 in_floor= 0/40
+  heavy_write K= 0 sleep_s=0.001  min=   6542 p50=   8959 p95=   9292 p99=    9571 max=    9750 cv=0.0782 in_floor= 0/40
+  heavy_write K= 0 sleep_s=0.01   min=   6666 p50=   8980 p95=  10252 p99=   11109 max=   11125 cv=0.0840 in_floor= 2/40
+  heavy_write K= 0 sleep_s=0.1    min=   6750 p50=   9250 p95=   9793 p99=    9833 max=    9833 cv=0.0688 in_floor= 2/40
+  heavy_write K= 0 sleep_s=1.0    min=   6750 p50=   9354 p95=  10716 p99=   10951 max=   11000 cv=0.0825 in_floor= 0/40
+  heavy_write K= 1 sleep_s=0.0    min=   6083 p50=   6666 p95=   7196 p99=    8720 max=    8834 cv=0.0785 in_floor= 0/40
+  heavy_write K= 1 sleep_s=0.001  min=   6041 p50=   6584 p95=   7001 p99=    8631 max=    9167 cv=0.0793 in_floor= 0/40
+  heavy_write K= 1 sleep_s=0.01   min=   6208 p50=   8771 p95=   9837 p99=   10070 max=   10167 cv=0.1374 in_floor= 1/40
+  heavy_write K= 1 sleep_s=0.1    min=   6125 p50=   6479 p95=   8324 p99=    9110 max=    9208 cv=0.1046 in_floor= 0/40
+  heavy_write K= 1 sleep_s=1.0    min=   6041 p50=   6375 p95=   6837 p99=    8085 max=    8833 cv=0.0695 in_floor= 0/40
+  heavy_write K= 5 sleep_s=0.0    min=   6125 p50=   6604 p95=   6920 p99=    7051 max=    7084 cv=0.0341 in_floor= 0/40
+  heavy_write K= 5 sleep_s=0.001  min=   6083 p50=   6438 p95=   6835 p99=    6900 max=    6916 cv=0.0352 in_floor= 0/40
+  heavy_write K= 5 sleep_s=0.01   min=   6167 p50=   6708 p95=   9222 p99=    9535 max=    9584 cv=0.1646 in_floor= 0/40
+  heavy_write K= 5 sleep_s=0.1    min=   6125 p50=   6458 p95=   7007 p99=    8886 max=    9000 cv=0.0882 in_floor= 0/40
+  heavy_write K= 5 sleep_s=1.0    min=   6083 p50=   6584 p95=   8962 p99=    9067 max=    9083 cv=0.1083 in_floor= 0/40
+  heavy_write K=20 sleep_s=0.0    min=   6208 p50=   6542 p95=   6964 p99=    9015 max=   10250 cv=0.0942 in_floor= 0/40
+  heavy_write K=20 sleep_s=0.001  min=   6000 p50=   6458 p95=   6835 p99=    6976 max=    7041 cv=0.0379 in_floor= 0/40
+  heavy_write K=20 sleep_s=0.01   min=   6041 p50=   6667 p95=   9086 p99=   10243 max=   10958 cv=0.1413 in_floor= 0/40
+  heavy_write K=20 sleep_s=0.1    min=   6166 p50=   6479 p95=   7206 p99=   10761 max=   11541 cv=0.1470 in_floor= 0/40
+  heavy_write K=20 sleep_s=1.0    min=   6083 p50=   6438 p95=   7135 p99=    7409 max=    7458 cv=0.0516 in_floor= 0/40
+  same        K= 0 sleep_s=0.0    min=   6209 p50=   6917 p95=   7421 p99=   10078 max=   10208 cv=0.1104 in_floor= 0/40
+  same        K= 0 sleep_s=0.001  min=   6583 p50=   9042 p95=  10004 p99=   10159 max=   10208 cv=0.1081 in_floor= 0/40
+  same        K= 0 sleep_s=0.01   min=   6792 p50=   8771 p95=   9680 p99=   10018 max=   10083 cv=0.0706 in_floor= 2/40
+  same        K= 0 sleep_s=0.1    min=   6750 p50=   9229 p95=  10970 p99=   83233 max=  123208 cv=1.9618 in_floor= 3/40
+  same        K= 0 sleep_s=1.0    min=   6708 p50=   9270 p95=  10088 p99=   14945 max=   18000 cv=0.1699 in_floor= 4/40
+  same        K= 1 sleep_s=0.0    min=   6166 p50=   6771 p95=   7419 p99=    7789 max=    8000 cv=0.0573 in_floor= 1/40
+  same        K= 1 sleep_s=0.001  min=   6083 p50=   6417 p95=   7112 p99=    9784 max=   10125 cv=0.1184 in_floor= 0/40
+  same        K= 1 sleep_s=0.01   min=   6416 p50=   8708 p95=  17260 p99=   30785 max=   34750 cv=0.5869 in_floor= 2/40
+  same        K= 1 sleep_s=0.1    min=   6125 p50=   6979 p95=  10881 p99=   45240 max=   52958 cv=1.1832 in_floor= 0/40
+  same        K= 1 sleep_s=1.0    min=   6125 p50=   6646 p95=   8932 p99=   10022 max=   10542 cv=0.1349 in_floor= 0/40
+  same        K= 5 sleep_s=0.0    min=   6083 p50=   6708 p95=   7918 p99=    8543 max=    8917 cv=0.0919 in_floor= 0/40
+  same        K= 5 sleep_s=0.001  min=   6125 p50=   6709 p95=   7127 p99=    7217 max=    7250 cv=0.0398 in_floor= 0/40
+  same        K= 5 sleep_s=0.01   min=   6125 p50=   6792 p95=   9165 p99=   10095 max=   10209 cv=0.1494 in_floor= 0/40
+  same        K= 5 sleep_s=0.1    min=   6000 p50=   6708 p95=   9339 p99=   80447 max=  125833 cv=2.7996 in_floor= 0/40
+  same        K= 5 sleep_s=1.0    min=   5959 p50=   6417 p95=   7127 p99=    8056 max=    8625 cv=0.0642 in_floor= 0/40
+  same        K=20 sleep_s=0.0    min=   6041 p50=   6771 p95=   7559 p99=   29301 max=   43000 cv=0.8484 in_floor= 0/40
+  same        K=20 sleep_s=0.001  min=   6125 p50=   6500 p95=   6962 p99=    9456 max=   11000 cv=0.1142 in_floor= 0/40
+  same        K=20 sleep_s=0.01   min=   6166 p50=   6792 p95=   8992 p99=  101956 max=  148334 cv=3.3255 in_floor= 0/40
+  same        K=20 sleep_s=0.1    min=   6083 p50=   6584 p95=  11217 p99=   24913 max=   28000 cv=0.6107 in_floor= 0/40
+  same        K=20 sleep_s=1.0    min=   6000 p50=   6375 p95=   6711 p99=    6826 max=    6875 cv=0.0345 in_floor= 0/40
