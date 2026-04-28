@@ -340,3 +340,198 @@ sleep_100ms drift is more anomalous than 003 will be informative, and
 first. Pre-registration of 003 (kernel-size sweep) and 003a (drift
 reproduction at sleep_100ms) will be done as separate decisions; this
 experiment is closed.
+
+---
+
+## M4 Max addendum (re-run on new hardware)
+
+**Date re-run:** 2026-04-28
+**Hardware:** Apple M4 Max 36GB / `applegpu_g16s`, MacBook Pro 14"
+(Mac16,6), 14-core (10P+4E), AC power
+**OS:** macOS 26.4.1 (build 25E253)
+**Raw data:** `raw/20260428T112556-sleep_{0,1ms,10ms,100ms,1s}.csv`,
+`raw/20260428T112556-meta.txt`, `raw/20260428T112556-stdout.log`
+**Wall-clock duration:** 223.7 s (essentially identical to M1 Pro's
+224.1 s — wall time is dominated by `sleep_1s` x 200).
+
+Re-ran 002 unchanged (one small addition: meta now records
+`device.architecture().name()`). Same 5 cadences, same N=200.
+
+### Headline: the M1 Pro "1ms nightmare zone" is GONE
+
+**This is the largest qualitative finding of the M4 Max re-run series
+so far.** On M1 Pro, sleep_1ms had cv=7.03 — *the worst by 3×*, with a
+bimodal distribution where 5/200 dispatches took 30-80× longer than
+the median. On M4 Max, sleep_1ms has cv=**0.07** — *the best by an
+order of magnitude over every other cadence*, with a tight unimodal
+distribution and max=12.5 µs (vs 663 µs on M1 Pro at the same cadence).
+
+The M1 Pro recipe of "**never** pick a sleep value in the 1-10 ms
+transition zone" does **not** transfer to M4 Max. Either the GPU's
+power-state machine has fewer / different states near 1 ms, or the
+states transition fast enough that 1 ms idle no longer falls inside
+a transition window, or both. The structural lesson — "DVFS state
+matters and noise is cadence-dependent" — survives, but the specific
+operating constraints are chip-specific.
+
+### Side-by-side: M1 Pro vs M4 Max
+
+GPU duration in raw counter units (ns), per condition:
+
+| condition    | metric  | M1 Pro (g13s) | M4 Max (g16s) | delta |
+|--------------|---------|--------------:|--------------:|-------|
+| sleep_0      | min     | 7 875         | **6 000**     | -24%  |
+|              | p50     | 8 083         | **6 458**     | -20%  |
+|              | p95     | 8 250         | 8 379         | ~     |
+|              | p99     | 11 586        | 58 350        | **+5×** |
+|              | max     | 83 750        | 163 084       | +95%  |
+|              | cv      | 0.66          | **1.92**      | M4 worse |
+| **sleep_1ms**| p50     | 8 291         | 6 791         | -18%  |
+|              | p95     | 9 381         | 7 208         | -23%  |
+|              | p99     | 258 385       | **7 470**     | **-97%** |
+|              | max     | 663 208       | **12 500**    | **-98%** |
+|              | **cv**  | **7.03**      | **0.07**      | **100× cleaner** |
+| sleep_10ms   | p50     | 11 292        | 8 917         | -21%  |
+|              | p95     | 15 646        | 21 502        | +37%  |
+|              | p99     | 77 819        | 55 084        | -29%  |
+|              | max     | 319 708       | 137 458       | -57%  |
+|              | cv      | 2.71          | 1.38          | -49%  |
+| sleep_100ms  | p50     | 13 791        | 9 000         | -35%  |
+|              | p95     | 19 711        | 20 015        | ~     |
+|              | p99     | 133 210       | 27 101        | -80%  |
+|              | max     | 409 834       | 158 833       | -61%  |
+|              | cv      | 2.23          | 1.64          | -26%  |
+| sleep_1s     | min     | 10 333        | 7 667         | -26%  |
+|              | p50     | 15 229        | 9 042         | -41%  |
+|              | p95     | 20 252        | 22 519        | +11%  |
+|              | p99     | 21 083        | 25 168        | +19%  |
+|              | max     | 48 250        | 29 208        | -39%  |
+|              | cv      | **0.21**      | **0.46**      | **2.2× worse** |
+
+### Five distinct shifts G13 → G16
+
+1. **Floor dropped uniformly ~20-25 %.** Min and p50 across every
+   cadence are 18-41 % lower on M4 Max. Consistent with the 6.4 µs
+   floor measured in the 001 re-run.
+2. **The 1 ms transition zone vanished.** sleep_1ms on M4 Max behaves
+   like an idealized version of sleep_0: tight, unimodal, no big tail.
+   This is the most striking qualitative shift between G13 and G16
+   we have observed so far.
+3. **sleep_0 got NOISIER on M4 Max.** cv 0.66 → 1.92, driven by 1-2
+   very large outliers (max 163 µs vs 84 µs). The bulk distribution
+   is tighter (most samples in the new ~6.5 µs floor window, very few
+   in [8000, 8200]) but the worst-case grew. The M4 Max appears to
+   have a thinner, more cliffside back-to-back floor: when it lands,
+   it lands clean; when it misses, it misses bigger.
+4. **The "fully cold gives tight cv" intuition broke.** M1 Pro
+   sleep_1s was the cleanest condition (cv=0.21); M4 Max sleep_1s is
+   middle-of-pack (cv=0.46). The cold settled state on M4 Max is
+   noisier than on M1 Pro, both in absolute (max 29 µs vs 48 µs is
+   *better* but cv is worse because the median moved less) and in
+   relative terms.
+5. **The ordering of cv across cadences inverted.** M1 Pro:
+   `sleep_1ms (7.03) > sleep_10ms (2.71) > sleep_100ms (2.23) >
+   sleep_0 (0.66) > sleep_1s (0.21)`. M4 Max:
+   `sleep_0 (1.92) > sleep_100ms (1.64) > sleep_10ms (1.38) >
+   sleep_1s (0.46) > sleep_1ms (0.07)`. Almost the reverse for the
+   1ms case; jumbled elsewhere.
+
+### Floor-window count: the metric needs to move with the floor
+
+The "in_floor [8000, 8200]" count from M1 Pro is essentially zero on
+M4 Max in every condition — the floor *moved*. Going forward, this
+metric needs to be calibrated to the chip-specific floor (somewhere
+near [6000, 6500] for M4 Max sleep_0). For now, treat the M4 Max
+in_floor counts as evidence the floor shifted, not as evidence the
+chip never reaches its floor.
+
+### Sanity check vs M4 Max experiment 001
+
+| metric         | 001 backtoback (N=100) | 002 sleep_0 (N=200) | match? |
+|----------------|------------------------|---------------------|--------|
+| min            | 6 125                  | 6 000               | ✅     |
+| p50            | 6 417                  | 6 458               | ✅ ~1% |
+| p95            | 8 131                  | 8 379               | ✅     |
+| max            | 24 667                 | 163 084             | 002 has worse outlier |
+
+| metric         | 001 spaced1s (N=100)   | 002 sleep_1s (N=200)| match? |
+|----------------|------------------------|---------------------|--------|
+| min            | 6 208                  | 7 667               | ~      |
+| p50            | 9 188                  | 9 042               | ✅ ~1% |
+| p95            | 23 315                 | 22 519              | ✅ ~3% |
+| max            | 27 083                 | 29 208              | ✅     |
+
+Bulk distributions reproduce cleanly between 001 and 002 on M4 Max.
+The single 163 µs sleep_0 outlier in 002 is the kind of sample 001
+N=100 didn't catch — N=200 is enough to start seeing the M4 Max
+sleep_0 tail.
+
+### What does NOT change G13 → G16
+
+- The qualitative claim "DVFS state matters and noise is
+  cadence-dependent" still holds — just with completely different
+  per-cadence numbers.
+- Median climbs monotonically with sleep duration on both chips
+  (8.0 → 8.3 → 11.3 → 13.8 → 15.2 on G13; 6.5 → 6.8 → 8.9 → 9.0 →
+  9.0 on G16) — though the M4 Max curve flattens above 10 ms
+  whereas M1 Pro keeps climbing.
+- Tail outliers exist at every cadence on both chips, just at
+  different magnitudes and concentrations.
+- 24 MHz tick quantization apparent in raw values on both chips.
+- `sampleTimestamps:gpuTimestamp:` ratio = 1.000000 on both runs.
+
+### What this changes operationally
+
+The M1 Pro "noise budget" table is *wrong* on M4 Max. New M4 Max
+table:
+
+| cadence target              | recommended sleep | observed cv | notes |
+|-----------------------------|-------------------|-------------|-------|
+| "as fast as possible"       | 0 (back-to-back)  | ~1.9        | bulk tight ~6.5 µs but rare large outliers |
+| **"interactive responsive"**| **1 ms**          | **~0.07**   | **opposite of M1 Pro — sleep_1ms is the cleanest** |
+| "patient measurement"       | ≥ 1 s             | ~0.46       | not as tight as on M1 Pro |
+| AVOID                       | none observed yet | -           | no clear "nightmare zone" in this sweep |
+
+Decision 004's narrowed pair-timing scope is unchanged by this
+finding — it depends on math (variance composition) and on
+within-session ratio stability, neither of which 002 measured. But
+the *baseline* against which paired-ratio cv is compared has to be
+re-measured per chip.
+
+### New questions raised by the M4 Max re-run
+
+- **Does the M4 Max "sleep_1ms is cleanest" finding reproduce across
+  runs?** One run, one set of conditions. If reproducible, sleep_1ms
+  becomes the recommended cadence for any single-kernel microbench
+  on M4 Max — the inverse of the M1 Pro recommendation. Worth a
+  second run with the same conditions.
+- **Where does the M4 Max "transition zone" actually live, if at
+  all?** A finer sweep around the 1ms-10ms decade (sleep_2ms,
+  sleep_5ms) would tell us whether the transition just shifted to a
+  different cadence band or genuinely flattened out.
+- **What causes the rare large outliers at sleep_0 on M4 Max?**
+  163 µs max with a 6.5 µs median — that's a 25× spike. On M1 Pro
+  sleep_0, max was 84 µs / 8 µs median = 10×. The M4 Max
+  worst-case is *worse* in absolute terms even though the typical
+  case is better. Mechanism unclear.
+- **Why is M4 Max sleep_1s noisier than M1 Pro sleep_1s?** The
+  long-idle "cold settled" regime that M1 Pro had at cv=0.21 doesn't
+  exist on M4 Max in this run. Could be macOS scheduler differences,
+  could be different DVFS rest state, could be more frequent
+  background activity contention.
+- **Did the sleep_100ms drift from M1 Pro 002 reproduce on M4 Max?**
+  **No.** M1 Pro showed +2875 ns drift in median between first-20 and
+  last-20 samples (+25 %). M4 Max shows:
+
+  | condition   | first-20 p50 | last-20 p50 | shift |
+  |-------------|-------------:|------------:|------:|
+  | sleep_0     | 6 688        | 6 458       |  -229 |
+  | sleep_1ms   | 6 542        | 6 750       |  +208 |
+  | sleep_10ms  | 8 917        | 9 042       |  +125 |
+  | sleep_100ms | 8 896        | 9 146       |  +250 |
+  | sleep_1s    | 8 875        | 9 125       |  +250 |
+
+  All M4 Max conditions show shifts in [-250, +250] ns — well inside
+  noise. The M1 Pro sleep_100ms +2875 ns drift was either G13-specific,
+  macOS-26.3.1-specific, or a one-off run artifact. Doesn't reproduce
+  on G16 / 26.4.1.
