@@ -153,8 +153,16 @@ FMA_LEVELS = [
 
 def main():
     raw_dir = Path(__file__).resolve().parent / "raw"
-    measured = next(raw_dir.glob("*-measured.csv"))
-    repro = next(raw_dir.glob("*-repro.csv"))
+    # Pick the most recent run by timestamp prefix so this script works
+    # across re-runs (e.g. M1 Pro 20260427 + M4 Max 20260428). Caller
+    # can override by passing a timestamp prefix as the first argument.
+    if len(sys.argv) > 1:
+        prefix = sys.argv[1]
+        measured = raw_dir / f"{prefix}-measured.csv"
+        repro = raw_dir / f"{prefix}-repro.csv"
+    else:
+        measured = sorted(raw_dir.glob("*-measured.csv"))[-1]
+        repro = sorted(raw_dir.glob("*-repro.csv"))[-1]
     print(f"loading {measured.name}")
     by_combo, by_sweep = load_measured(measured)
     print(f"loading {repro.name}")

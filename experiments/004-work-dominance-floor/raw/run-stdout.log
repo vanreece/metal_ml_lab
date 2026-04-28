@@ -1,0 +1,213 @@
+Installed 3 packages in 4ms
+==============================================================================
+Experiment 004: work-dominance floor + 5.4us reproducibility
+==============================================================================
+QoS:   pthread_set_qos_class_self_np -> 0
+Power: Now drawing from 'AC Power'
+Display powerstate (start):
+  Driver ID  Current State  Max State  Current State Description
+Internal failure: Failed to get power state information
+pmset assertions (start, first 10 lines):
+  2026-04-28 11:47:29 -0700 
+  Assertion status system-wide:
+     BackgroundTask                 0
+     PreventDiskIdle                1
+     ApplePushServiceTask           0
+     UserIsActive                   0
+     PreventUserIdleDisplaySleep    1
+     SoftwareUpdateTask             0
+     PreventSystemSleep             0
+     ExternalMedia                  0
+caffeinate: started pid=9427
+powermetrics: skipped (EXP004_NO_POWERMETRICS set)
+
+Compiling 17 fma_loop variants ...
+  done. write_tid TEW=32 maxTPG=1024
+Conditions:
+  write_tid_threadcount levels: [32, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 8388608]
+  fma_loop_iters levels:        [16, 32, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 2048, 4096, 8192, 16384, 32768, 65536]
+  N_per_combo=300  N_sweeps=3
+  per-combo cooldown=2.0s  between-sweep cooldown=30.0s
+  sample_buffer slots=620, out_buffer bytes=33554432
+timestamp correlation (start): cpu=5562636857541 gpu=5562636857541
+
+==============================================================================
+PHASE 1: 5.4us reproducibility protocol (5 attempts)
+==============================================================================
+
+  Attempt 1/5: cooldown 5.0s ...
+    cal: first=9500 med_of_rest=6625
+    measured (N=40): min=6334 p50=6771 p95=9714 max=13333  cv=0.2189  in_low_floor[5000,6000]=0/40
+
+  Attempt 2/5: cooldown 5.0s ...
+    cal: first=10625 med_of_rest=6917
+    measured (N=40): min=6083 p50=6625 p95=7404 max=9292  cv=0.0871  in_low_floor[5000,6000]=0/40
+
+  Attempt 3/5: cooldown 5.0s ...
+    cal: first=10417 med_of_rest=9041
+    measured (N=40): min=6250 p50=6833 p95=9592 max=29208  cv=0.5332  in_low_floor[5000,6000]=0/40
+
+  Attempt 4/5: cooldown 5.0s ...
+    cal: first=9625 med_of_rest=9000
+    measured (N=40): min=6208 p50=6812 p95=9616 max=26542  cv=0.5028  in_low_floor[5000,6000]=0/40
+
+  Attempt 5/5: cooldown 5.0s ...
+    cal: first=10750 med_of_rest=6500
+    measured (N=40): min=6167 p50=6667 p95=7044 max=7292  cv=0.0330  in_low_floor[5000,6000]=0/40
+
+==============================================================================
+PHASE 2: 3 sequential sweeps
+==============================================================================
+
+--- Sweep 1/3 ---
+
+  Axis A: write_tid thread count (22 levels)
+    threads=      32  N=300  p50=     6375  p95=     6792  p99=     6968  cv=0.6409
+    threads=      64  N=300  p50=     6375  p95=     6833  p99=     9257  cv=0.1698
+    threads=      96  N=300  p50=     6458  p95=     6875  p99=     8694  cv=1.6058
+    threads=     128  N=300  p50=     6417  p95=     6875  p99=    38164  cv=3.1023
+    threads=     192  N=300  p50=     6500  p95=     6958  p99=     9064  cv=0.7933
+    threads=     256  N=300  p50=     6500  p95=     7977  p99=    11628  cv=0.4754
+    threads=     384  N=300  p50=     6500  p95=     6791  p99=    30737  cv=2.8415
+    threads=     512  N=300  p50=     6500  p95=     6708  p99=    23832  cv=1.4431
+    threads=     768  N=300  p50=     6792  p95=     7292  p99=     9042  cv=0.0686
+    threads=    1024  N=300  p50=     6833  p95=     7336  p99=     7884  cv=0.0579
+    threads=    1536  N=300  p50=     6980  p95=     7419  p99=     7542  cv=0.0430
+    threads=    2048  N=300  p50=     6750  p95=     7208  p99=     7334  cv=0.0271
+    threads=    4096  N=300  p50=     7458  p95=     7916  p99=     8083  cv=0.0551
+    threads=    8192  N=300  p50=     7833  p95=     8250  p99=     8502  cv=0.8355
+    threads=   16384  N=300  p50=     8604  p95=     9333  p99=    12084  cv=0.0764
+    threads=   32768  N=300  p50=     9708  p95=    10083  p99=    10250  cv=0.0232
+    threads=   65536  N=300  p50=    13250  p95=    13667  p99=    13876  cv=0.0238
+    threads=  131072  N=300  p50=    19875  p95=    20375  p99=    21631  cv=0.1822
+    threads=  262144  N=300  p50=    33333  p95=    33666  p99=    33834  cv=0.0108
+    threads=  524288  N=300  p50=    59583  p95=    60291  p99=    60542  cv=0.0547
+    threads= 1048576  N=300  p50=   112375  p95=   113375  p99=   114127  cv=0.2105
+    threads= 8388608  N=300  p50=   296813  p95=   813750  p99=   814585  cv=0.6909
+
+  Axis B: fma_loop iters (17 levels)
+    fma_iters=   16  N=300  p50=     6584  p95=     7000  p99=     8919  cv=0.0703
+    fma_iters=   32  N=300  p50=     6666  p95=     7084  p99=     7209  cv=0.0424
+    fma_iters=   64  N=300  p50=     7500  p95=     8042  p99=     8231  cv=0.0603
+    fma_iters=   96  N=300  p50=     7667  p95=     8209  p99=     8334  cv=0.0455
+    fma_iters=  128  N=300  p50=     8416  p95=     8917  p99=     9127  cv=0.3700
+    fma_iters=  192  N=300  p50=     9209  p95=     9792  p99=     9958  cv=0.0385
+    fma_iters=  256  N=300  p50=    21750  p95=    22083  p99=    22209  cv=0.0146
+    fma_iters=  384  N=300  p50=    29312  p95=    29584  p99=    29666  cv=0.0078
+    fma_iters=  512  N=300  p50=    36875  p95=    37375  p99=    37544  cv=0.1399
+    fma_iters=  768  N=300  p50=    51916  p95=    52336  p99=    52500  cv=0.0056
+    fma_iters= 1024  N=300  p50=    66958  p95=    67375  p99=    67541  cv=0.0804
+    fma_iters= 2048  N=300  p50=   127500  p95=   128084  p99=   128637  cv=0.2736
+    fma_iters= 4096  N=300  p50=   248459  p95=   249000  p99=   249208  cv=0.3142
+    fma_iters= 8192  N=300  p50=   157542  p95=   491381  p99=   491716  cv=1.0647
+    fma_iters=16384  N=300  p50=   238270  p95=   975875  p99=   976125  cv=1.0770
+    fma_iters=32768  N=300  p50=   417292  p95=   712252  p99=   826251  cv=0.4196
+    fma_iters=65536  N=300  p50=   832375  p95=  1243375  p99=  1338538  cv=0.2528
+
+  Between-sweep cooldown 30.0s ...
+
+--- Sweep 2/3 ---
+
+  Axis A: write_tid thread count (22 levels)
+    threads=      32  N=300  p50=     6459  p95=     6919  p99=     7293  cv=0.0526
+    threads=      64  N=300  p50=     6500  p95=     6919  p99=     7585  cv=0.0607
+    threads=      96  N=300  p50=     6625  p95=     7169  p99=     7875  cv=1.8888
+    threads=     128  N=300  p50=     6792  p95=     7335  p99=     8961  cv=0.0670
+    threads=     192  N=300  p50=     6625  p95=     7044  p99=     7427  cv=0.0569
+    threads=     256  N=300  p50=     6500  p95=     7002  p99=     7125  cv=0.0508
+    threads=     384  N=300  p50=     6667  p95=     7084  p99=     7791  cv=0.0519
+    threads=     512  N=300  p50=     7334  p95=     7792  p99=     7958  cv=1.0217
+    threads=     768  N=300  p50=     6896  p95=     7500  p99=     7792  cv=0.0568
+    threads=    1024  N=300  p50=     6812  p95=     7375  p99=     7500  cv=0.0379
+    threads=    1536  N=300  p50=     6875  p95=     7292  p99=     7500  cv=0.0382
+    threads=    2048  N=300  p50=     6916  p95=     7377  p99=     7834  cv=0.0521
+    threads=    4096  N=300  p50=     7458  p95=     7875  p99=     7917  cv=0.0554
+    threads=    8192  N=300  p50=     7292  p95=     7917  p99=     8042  cv=0.0469
+    threads=   16384  N=300  p50=     8812  p95=     9291  p99=     9385  cv=0.0561
+    threads=   32768  N=300  p50=     9958  p95=    10417  p99=    10847  cv=0.6584
+    threads=   65536  N=300  p50=    13250  p95=    13750  p99=    13958  cv=0.0292
+    threads=  131072  N=300  p50=    19625  p95=    19877  p99=    20000  cv=0.0073
+    threads=  262144  N=300  p50=    33334  p95=    33792  p99=    34333  cv=0.0117
+    threads=  524288  N=300  p50=    59625  p95=    60294  p99=    60679  cv=0.1097
+    threads= 1048576  N=300  p50=   112291  p95=   113333  p99=   113717  cv=0.2329
+    threads= 8388608  N=300  p50=   296521  p95=   813708  p99=   815044  cv=0.7026
+
+  Axis B: fma_loop iters (17 levels)
+    fma_iters=   16  N=300  p50=     6584  p95=     7294  p99=     9546  cv=0.0846
+    fma_iters=   32  N=300  p50=     6750  p95=     7250  p99=     7292  cv=0.0394
+    fma_iters=   64  N=300  p50=     8042  p95=     8792  p99=     9048  cv=1.2904
+    fma_iters=   96  N=300  p50=     7584  p95=     8125  p99=     8292  cv=0.0390
+    fma_iters=  128  N=300  p50=     8084  p95=     8541  p99=     8791  cv=0.0356
+    fma_iters=  192  N=300  p50=     9104  p95=     9709  p99=     9875  cv=0.0479
+    fma_iters=  256  N=300  p50=    22084  p95=    22667  p99=    24507  cv=0.0704
+    fma_iters=  384  N=300  p50=    29625  p95=    30208  p99=    32382  cv=0.0643
+    fma_iters=  512  N=300  p50=    36875  p95=    37208  p99=    37459  cv=0.0079
+    fma_iters=  768  N=300  p50=    51917  p95=    52416  p99=    54267  cv=0.0822
+    fma_iters= 1024  N=300  p50=    67000  p95=    67419  p99=    67541  cv=0.0030
+    fma_iters= 2048  N=300  p50=   127625  p95=   128041  p99=   128168  cv=0.1540
+    fma_iters= 4096  N=300  p50=   137188  p95=   249419  p99=   249667  cv=0.5926
+    fma_iters= 8192  N=300  p50=   180062  p95=   491542  p99=   491750  cv=0.9249
+    fma_iters=16384  N=300  p50=   279270  p95=   975708  p99=   976251  cv=0.8038
+    fma_iters=32768  N=300  p50=   417125  p95=  1064502  p99=  1945375  cv=0.7349
+    fma_iters=65536  N=300  p50=   832458  p95=   832667  p99=  1197590  cv=0.2186
+
+  Between-sweep cooldown 30.0s ...
+
+--- Sweep 3/3 ---
+
+  Axis A: write_tid thread count (22 levels)
+    threads=      32  N=300  p50=     6542  p95=     6959  p99=    10002  cv=1.4735
+    threads=      64  N=300  p50=     6584  p95=     7083  p99=     7167  cv=0.0381
+    threads=      96  N=300  p50=     7250  p95=     7667  p99=     7875  cv=0.0452
+    threads=     128  N=300  p50=     6583  p95=     6917  p99=     7719  cv=0.0636
+    threads=     192  N=300  p50=     6583  p95=     7000  p99=     7125  cv=0.0336
+    threads=     256  N=300  p50=     6458  p95=     6916  p99=     7000  cv=0.0336
+    threads=     384  N=300  p50=     6542  p95=     7000  p99=     7230  cv=0.0626
+    threads=     512  N=300  p50=     6875  p95=     7752  p99=     9001  cv=0.0757
+    threads=     768  N=300  p50=     6833  p95=     7336  p99=     7500  cv=0.0473
+    threads=    1024  N=300  p50=     6666  p95=     7000  p99=     7084  cv=0.0201
+    threads=    1536  N=300  p50=     6666  p95=     6791  p99=     6834  cv=0.0130
+    threads=    2048  N=300  p50=     6833  p95=     7333  p99=     7375  cv=0.0427
+    threads=    4096  N=300  p50=     6875  p95=     7377  p99=     7892  cv=0.0619
+    threads=    8192  N=300  p50=     7958  p95=     8291  p99=     8512  cv=0.8095
+    threads=   16384  N=300  p50=     8583  p95=     9127  p99=    10423  cv=0.0604
+    threads=   32768  N=300  p50=     9938  p95=    10417  p99=    10625  cv=0.0367
+    threads=   65536  N=300  p50=    13042  p95=    13583  p99=    13751  cv=0.0274
+    threads=  131072  N=300  p50=    20167  p95=    20500  p99=    20625  cv=0.0173
+    threads=  262144  N=300  p50=    33292  p95=    33669  p99=    33916  cv=0.0588
+    threads=  524288  N=300  p50=    59646  p95=    60375  p99=    60708  cv=0.1229
+    threads= 1048576  N=300  p50=   112625  p95=   113250  p99=   113500  cv=0.2438
+    threads= 8388608  N=300  p50=   297166  p95=   813750  p99=   814501  cv=0.6711
+
+  Axis B: fma_loop iters (17 levels)
+    fma_iters=   16  N=300  p50=     6708  p95=     7292  p99=     8880  cv=0.5444
+    fma_iters=   32  N=300  p50=     7167  p95=     7791  p99=     8000  cv=0.0660
+    fma_iters=   64  N=300  p50=     8166  p95=     8750  p99=     8875  cv=0.0487
+    fma_iters=   96  N=300  p50=     7500  p95=     8125  p99=     8250  cv=0.1948
+    fma_iters=  128  N=300  p50=     8292  p95=     8877  p99=     9484  cv=0.0602
+    fma_iters=  192  N=300  p50=     9000  p95=     9252  p99=     9667  cv=0.0212
+    fma_iters=  256  N=300  p50=    22000  p95=    22463  p99=    22792  cv=0.0197
+    fma_iters=  384  N=300  p50=    29667  p95=    30169  p99=    32419  cv=0.0194
+    fma_iters=  512  N=300  p50=    36875  p95=    37333  p99=    37418  cv=0.0520
+    fma_iters=  768  N=300  p50=    51708  p95=    51917  p99=    52083  cv=0.0029
+    fma_iters= 1024  N=300  p50=    67000  p95=    67459  p99=    67836  cv=0.0516
+    fma_iters= 2048  N=300  p50=   127583  p95=   128167  p99=   128292  cv=0.2352
+    fma_iters= 4096  N=300  p50=   248833  p95=   249542  p99=   249666  cv=0.2853
+    fma_iters= 8192  N=300  p50=   157521  p95=   492002  p99=   492293  cv=1.0554
+    fma_iters=16384  N=300  p50=   209562  p95=   976335  p99=   976791  cv=1.2637
+    fma_iters=32768  N=300  p50=   417104  p95=   712042  p99=   712544  cv=0.4064
+    fma_iters=65536  N=300  p50=   832417  p95=  1243458  p99=  1324519  cv=0.2817
+
+wrote 20260428T114729-measured.csv (35100 rows)
+wrote 20260428T114729-calibration.csv (1170 rows)
+wrote 20260428T114729-repro.csv (250 rows)
+
+timestamp correlation (end):   cpu=5901958086583 gpu=5901958086583
+elapsed cpu_ticks=339321229042  gpu_ticks=339321229042  ratio_gpu/cpu=1.000000
+experiment wall-clock: 339.3s
+wrote 20260428T114729-meta.txt
+
+powermetrics: no sidecar
+caffeinate: stopped rc=-15
+
+Done.

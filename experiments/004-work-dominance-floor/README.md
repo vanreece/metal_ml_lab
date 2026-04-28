@@ -671,3 +671,176 @@ added.
 
 A small `analysis.py` next to `run.py` does the pooled-across-sweeps
 analysis for this writeup. It is a one-off, not a library.
+
+---
+
+## M4 Max addendum (re-run on new hardware)
+
+**Date re-run:** 2026-04-28
+**Hardware:** Apple M4 Max 36GB / `applegpu_g16s`, MacBook Pro 14"
+(Mac16,6), 14-core (10P+4E), AC power
+**OS:** macOS 26.4.1 (build 25E253)
+**Raw data:** `raw/20260428T114729-{measured,calibration,repro}.csv`,
+`raw/20260428T114729-meta.txt`, `raw/run-stdout.log`
+**Wall-clock duration:** 339.3 s (~6 % faster than M1 Pro's 359 s
+at the same parameter sweep — cooldowns dominate, GPU work is faster
+on M4 Max but barely visible in wall time)
+**Powermetrics:** intentionally skipped (`EXP004_NO_POWERMETRICS=1`)
+**Analysis:** `uv run analysis.py 20260428T114729` (analysis.py was
+updated to take an optional timestamp prefix and otherwise pick the
+most recent run, so it works on both M1 Pro and M4 Max data).
+
+Re-ran 004 unchanged. All sweep parameters identical to M1 Pro.
+
+### Headline findings on M4 Max
+
+1. **Work-dominance threshold for `write_tid` shifted UP by ~2-4×.**
+   On M1 Pro, work began dominating at 131K-262K threads (the
+   `p50_ratio/level_ratio` first crossed 0.6 at 131K). On M4 Max, the
+   same threshold sits at **262K-524K threads**:
+
+   | thread count | M1 Pro `ratio_of_ratios` | M4 Max `ratio_of_ratios` | reading |
+   |--------------|-------------------------:|-------------------------:|---------|
+   | 65 536       | 0.65                     | 0.67                     | both: not yet work-dominated |
+   | 131 072      | **0.67**                 | 0.75                     | M4: still mostly overhead |
+   | 262 144      | **0.78**                 | **0.84**                 | both: substantially work-dominated |
+   | 524 288      | 0.79                     | **0.89**                 | M4: close to fully linear |
+   | 1 048 576    | 0.89                     | **0.94**                 | M4: fully work-dominated |
+
+   The shift makes physical sense: M4 Max executes write_tid faster
+   per thread, so it takes more threads to sum to a duration that's
+   significant compared to dispatch overhead. The minimum-viable
+   thread count for memory-bound microbench design on M4 Max is
+   **≥ 524K threads**, vs ≥ 262K on M1 Pro. The ~32K-thread
+   "overhead-dominated" zone now extends through ~131K-262K threads.
+
+2. **The `fma_loop` +21 µs step at iters 192→256 EXISTS on M4 Max
+   too, with smaller magnitude (~+13 µs).** This is a major
+   confirmation. M1 Pro had p50 jumping from 12.6 µs (iters=192) to
+   34.2 µs (iters=256) — a +21 µs / 2.71× step. M4 Max has the same
+   shape: 9.0 µs → 21.9 µs, a +12.9 µs / 2.42× step. The crossover
+   ratio reads as 1.818 on M4 Max vs 2.030 on M1 Pro — both are
+   dramatic outliers in an otherwise-smooth scaling curve, both at
+   the *same* iter boundary, both followed by clean linear scaling
+   (M4 Max's `p50_ratio/level_ratio` ∈ [0.90, 0.97] for iters 384-2048).
+
+   Implication: **the +21 µs step is not a G13-specific quirk** —
+   it's a feature of the Metal compiler's code-generation or of a
+   shared microarchitectural threshold (register pressure, loop
+   unrolling, instruction-cache crossover) that survived the
+   G13 → G16 transition. The smaller absolute magnitude on M4 Max
+   is consistent with G16 being faster overall but hitting the same
+   "more work suddenly costs disproportionately" boundary at the
+   same algorithmic complexity.
+
+3. **5.4 µs reproduction protocol: 0/200 hits in [5000, 6000] —
+   consistent with M1 Pro 004's null result, BUT note the band is
+   below the M4 Max floor anyway.** M4 Max's normal back-to-back
+   floor is ~6.5 µs (per 001 / 002 re-runs and confirmed here at
+   p50 = 6458-6792 across the 5 attempts). The [5000, 6000] window
+   is *below* the M4 Max floor by 500-1500 ns, so hits would be
+   exceptional rather than expected. The original M1 Pro 5.4 µs
+   floor question is moot on M4 Max — the analogous question (is
+   there a sub-floor state at all?) was answered separately by
+   M4 Max 003's `fma_loop K=20 sleep_0` combo, which produced 11/40
+   samples below 5500 ns with absolute min = 2083 ns. So a sub-floor
+   state DOES exist on M4 Max (around 2-4 µs), but reached via a
+   very different protocol than the 003 first-combo trigger that
+   the 5.4 µs reproduction protocol was built around.
+
+4. **Bimodality band shifted from 8K-16K (M1 Pro) to 4K-16K (M4 Max).**
+   `fma_loop iters=4096` on M4 Max showed sweep p50s `[248459,
+   **137188**, 248833]` — a **1.81× sweep-to-sweep spread**, the
+   strongest bimodality in the whole run. M1 Pro had iters=4096 as
+   solidly linear (sweep p50s within 1 %). M4 Max iters=8192-16384
+   also show bimodality (1.14× and 1.33× spreads). The bimodal band
+   broadened *toward shorter durations* on M4 Max — the
+   chip-state-machine effect that produces it apparently kicks in at
+   shorter dispatch durations on G16.
+
+5. **Bandwidth at 8M threads: ~113 GB/s on M4 Max vs ~85 GB/s on
+   M1 Pro.** With 32 MB written and p50 = 296.8 µs, observed
+   write-only bandwidth is `33.55e6 / 296.8e-6 ≈ 113 GB/s`. M4 Max's
+   rated unified-memory bandwidth is ~410-540 GB/s, so this single
+   dispatch reaches **~22-28 % of peak**. M1 Pro reached ~43 % of
+   its rated ~200 GB/s with the same kernel. **M4 Max appears to
+   leave more bandwidth on the table from a single sequential
+   write-only dispatch** — possibly because the per-controller
+   coverage requires more concurrent threads, or because
+   write-combining behavior differs across generations. Worth a
+   focused bandwidth-saturation experiment before trusting any
+   "this kernel hits N% of peak bandwidth" claim on M4 Max.
+
+### Side-by-side: dispatch-overhead floor on M4 Max
+
+| metric                                | M1 Pro    | M4 Max    |
+|---------------------------------------|----------:|----------:|
+| `write_tid` 32t pooled p50            | ~9 080    | **6 458** |
+| `write_tid` 32t pooled p05            | ~8 600    | 6 250     |
+| Plateau width (count of "flat" thread levels at floor) | ~10 levels (32 → 4096) | ~10 levels (32 → 4096) |
+| First level above floor               | 8192      | 4096      |
+| Bandwidth-knee thread count (8M)      | 8 388 608 | 8 388 608 |
+| Observed write bandwidth at 8M        | ~85 GB/s  | ~113 GB/s |
+| Bandwidth as % of rated peak          | ~43 %     | ~22-28 %  |
+
+### What does NOT change G13 → G16
+
+- The qualitative claim "there is a dispatch-overhead floor that
+  small kernels never escape" still holds.
+- Linear scaling kicks in cleanly once work dominates on both chips.
+- The `fma_loop 192→256` step is shared.
+- A bimodal band exists in the medium-duration regime on both chips
+  (just at different iter ranges).
+- Write_tid hits a bandwidth knee at 8M threads on both chips.
+- 24 MHz tick quantization apparent throughout.
+
+### What does change G13 → G16
+
+- Floor moved (8.0 → 6.5 µs).
+- Work-dominance threshold for `write_tid` moved up (262K → 524K).
+- +21 µs step shrank to +13 µs (same shape, smaller magnitude).
+- Bimodal band shifted toward shorter durations (8K-16K → 4K-16K).
+- Single-dispatch bandwidth as % of rated peak dropped (43 % → 22-28 %).
+- The 5.4 µs floor question is replaced by a new ~2 µs sub-floor
+  state question (see 003 M4 Max addendum).
+
+### Operational consequences for downstream work on M4 Max
+
+1. **Memory-bound microbench (write_tid-class) needs ≥ 524K threads
+   on M4 Max** to be measuring the kernel rather than dispatch
+   overhead. (M1 Pro recipe: ≥ 262K. M4 Max recipe: ≥ 524K.)
+2. **Compute-bound microbench (fma_loop-class) needs ≥ 256 iters per
+   thread on M4 Max** — the same boundary as M1 Pro. The +13 µs
+   step still makes 96-256 iters non-monotonic and unsuitable for
+   "increase work, expect proportional time" methodology.
+3. **Avoid fma_iters in the [4K, 16K] range on M4 Max** for between-
+   run-comparable measurements — same advice as M1 Pro for
+   [8K, 16K], extended downward.
+4. **Bandwidth claims need a dedicated saturation experiment** on
+   M4 Max. The 8M-thread write-only number (113 GB/s) leaves a much
+   larger fraction of peak unmeasured than M1 Pro did. Don't quote
+   write_tid 8M as "M4 Max bandwidth" without a methodology note.
+
+### New questions raised by the M4 Max re-run
+
+- **What's the rest of the M4 Max bandwidth picture?** A dedicated
+  bandwidth experiment varying threadgroup size, access pattern
+  (read-only, read-modify-write, scatter, gather), and dispatch count
+  per command buffer would tell us whether the 22-28 % of peak is
+  fundamental to single-dispatch sequential writes or specific to
+  this kernel/access pattern.
+- **Is the +13 µs step (M4 Max) vs +21 µs step (M1 Pro) the same
+  underlying mechanism scaled by clock speed?** A look at Metal AIR
+  / GPU assembly at iters 192 vs 256 on both chips would close this
+  question — if the same instruction-count discontinuity appears at
+  the same iter boundary, it's compiler-driven; if the assembly is
+  identical and only timing differs, it's a hardware threshold.
+- **Why did the bimodal band broaden toward shorter iters on
+  M4 Max?** iters=4096 on M1 Pro was solidly linear (1 % spread);
+  on M4 Max it's the strongest bimodal level (1.81× spread). The
+  duration band corresponds to ~250 µs dispatches — possibly the
+  M4 Max DVFS state machine has a transition at shorter dispatches
+  than M1 Pro's machine did.
+- **The `analysis.py` change** (timestamp argument + sorted glob)
+  should also propagate to other experiments' analysis scripts as
+  they get re-run. So far only 004 has one.
