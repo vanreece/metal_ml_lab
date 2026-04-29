@@ -458,6 +458,9 @@ def cmd_dashboard(args) -> int:
                 value = ioreport.IOReportSimpleGetIntegerValue(chan, None)
                 per_name_nj[name] = per_name_nj.get(name, 0) + energy_to_nj(value, meta["unit"])
             elif fmt == IOREPORT_FORMAT_STATE and states_writer is not None:
+                if (args.state_groups_set is not None
+                        and meta["group"] not in args.state_groups_set):
+                    continue
                 n_states = ioreport.IOReportStateGetCount(chan)
                 for idx in range(n_states):
                     name_cf = ioreport.IOReportStateGetNameForIndex(chan, idx)
@@ -511,9 +514,18 @@ def main() -> int:
                     help="write per-sample CSV with monotonic_ns")
     ap.add_argument("--include-states", action="store_true",
                     help="also emit a sibling -states.csv with per-state "
-                         "residency for every STATE-format channel "
-                         "(GPUPH, BSTGPUPH, PWRCTRL, etc.)")
+                         "residency for STATE-format channels (GPUPH, "
+                         "BSTGPUPH, PWRCTRL, etc.) in --state-groups")
+    ap.add_argument("--state-groups", type=str, default="GPU Stats",
+                    help="comma-separated group names to include in the "
+                         "states CSV (default: 'GPU Stats'). System-wide "
+                         "STATE channels number 1700+ and produce huge "
+                         "CSVs if not filtered. Pass 'ALL' to disable.")
     args = ap.parse_args()
+    if args.state_groups.strip().upper() == "ALL":
+        args.state_groups_set = None
+    else:
+        args.state_groups_set = {g.strip() for g in args.state_groups.split(",")}
 
     if args.list:
         return cmd_list()

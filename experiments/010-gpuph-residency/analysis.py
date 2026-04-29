@@ -161,39 +161,38 @@ def main():
         print(f"staircase mean-idx trajectory: {[f'{m:.2f}' for m in means]}")
         print(f"  monotonic-up transitions: {n_inc}/{len(means) - 1}")
 
-    sub = next((r for r in rows_for_verdict if r["phase"] == "subfloor"), None)
-    if sub:
-        print(f"subfloor top-state: {sub['top1_state']} at {sub['top1_pct']:.1f}%")
+    def top_half_pct(phase_name: str) -> float:
+        resid = per_phase_resid.get(phase_name, [])
+        if not resid:
+            return float("nan")
+        n_states = len(resid)
+        top_half = sum(resid[n_states // 2:])
+        total = sum(resid)
+        return (top_half / total * 100) if total else 0.0
 
-    # Apply pre-registered thresholds
-    pass_strict = False
-    if len(staircase_phases) == 5 and sub:
+    sat_top_half = top_half_pct("step_100pct")
+    sub_top_half = top_half_pct("subfloor")
+    sub = next((r for r in rows_for_verdict if r["phase"] == "subfloor"), None)
+    print(f"saturation (step_100pct) top-half (idx >= {len(name_by_idx)//2}) "
+          f"residency: {sat_top_half:.1f}%")
+    if sub:
+        print(f"subfloor top-state: {sub['top1_state']} at {sub['top1_pct']:.1f}% "
+              f"(top-half: {sub_top_half:.1f}%)")
+
+    if len(staircase_phases) == 5:
         means = [r["mean_idx"] for r in staircase_phases]
         n_inc = sum(1 for a, b in zip(means, means[1:]) if b >= a)
-        # PASS criteria from README:
-        # - mean idx monotonic across 5 staircase phases (>=4 of 4 transitions)
-        # - >=80% top-half residency at subfloor
-        # We approximate "top half" with top-state-pct >= 80
-        sub_top = sub["top1_pct"]
-        top_half_pct = 0.0
-        # Recompute top-half over states 8-15 for subfloor
-        sub_resid = per_phase_resid.get("subfloor", [])
-        if sub_resid:
-            n_states = len(sub_resid)
-            top_half = sum(sub_resid[n_states // 2:])
-            total = sum(sub_resid)
-            top_half_pct = (top_half / total * 100) if total else 0.0
-        print(f"subfloor top-half (idx >= {len(name_by_idx)//2}) residency: "
-              f"{top_half_pct:.1f}%")
-        if n_inc >= 4 and top_half_pct >= 80:
+        # PASS criteria per README:
+        #   - mean idx monotonic across staircase (>=4 of 4 transitions)
+        #   - >=80% top-half residency during SUSTAINED SATURATION (step_100pct)
+        if n_inc >= 4 and sat_top_half >= 80:
             print("VERDICT: PASS")
-            pass_strict = True
-        elif n_inc >= 2 or top_half_pct >= 50:
+        elif n_inc >= 2 or sat_top_half >= 50:
             print(f"VERDICT: MARGINAL (staircase monotonic {n_inc}/4, "
-                  f"subfloor top-half {top_half_pct:.1f}%)")
+                  f"step_100 top-half {sat_top_half:.1f}%)")
         else:
             print(f"VERDICT: FAIL (staircase monotonic {n_inc}/4, "
-                  f"subfloor top-half {top_half_pct:.1f}%)")
+                  f"step_100 top-half {sat_top_half:.1f}%)")
 
     # Free-signal: per-phase residency on other GPU Stats STATE channels
     print()

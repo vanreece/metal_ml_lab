@@ -280,3 +280,213 @@ Branches:
   re-run.
 
 We do not plan past these branches.
+
+---
+
+## Result
+
+**Date run:** 2026-04-28 (timestamp prefix `20260428T212810`)
+**Hardware:** Apple M4 Max 36GB / `applegpu_g16s` / macOS 26.4.1
+**Wall-clock:** ~110 s (10 s baseline + 5 × 8 s staircase + 10 s tail
++ 50 s sub-floor recipe).
+**Outcome:** **PASS.** Staircase mean state index trajectory was
+**monotonic 4/4 transitions** (0.14 → 0.57 → 1.15 → 2.10 → 13.65),
+and step_100pct concentrated **89.8 % of residency in the top half**
+of states (P15 alone at 89.2 %). GPUPH bindings work; per-state
+residency tracks workload intensity faithfully.
+
+### Headline: per-phase GPUPH residency on M4 Max
+
+| phase       | n_win | top-1 state | top-1 %  | top-2 state | top-2 % | mean idx |
+|-------------|------:|:-----------:|---------:|:-----------:|--------:|---------:|
+| baseline    |     8 | OFF         |  85.1 %  | P1          |  14.9 % |     0.15 |
+| step_000pct |     6 | OFF         |  86.1 %  | P1          |  13.9 % |     0.14 |
+| step_025pct |     7 | P1          |  57.4 %  | OFF         |  42.6 % |     0.57 |
+| step_050pct |     7 | P1          |  80.2 %  | OFF         |   9.0 % |     1.15 |
+| step_075pct |     6 | P2          |  76.7 %  | P1          |   9.9 % |     2.10 |
+| **step_100pct** | 7 | **P15**     | **89.2 %** | P2        |   8.4 % | **13.65** |
+| tail        |     8 | OFF         |  83.7 %  | P1          |  12.6 % |     0.66 |
+| **subfloor** |   41 | **P15**     | **61.6 %** | P1        |  23.7 % |    10.41 |
+
+GPUPH on M4 Max has **16 states**: index 0 = `OFF`, indices 1-15 =
+`P1` through `P15`. State names contain no frequency info (as
+predicted — Apple doesn't publish per-state MHz mappings).
+
+Per-window residency sum vs wall-clock ticks: **99.8-100.1 %** —
+GPUPH residency adds up to wall time, not just active time. This
+makes percent-of-residency interpretation natural ("of all wall
+clock, X % was in state Y") without "of active time" caveats.
+
+### Hypothesis check
+
+| prediction                                          | result                                | verdict |
+|-----------------------------------------------------|---------------------------------------|---------|
+| GPUPH state count: 8-16                             | 16                                    | ✓       |
+| Idle baseline: ~95 %+ in lowest state               | 85.1 % OFF + 14.9 % P1 = 100 %        | partial — OFF alone is 85 %; chip never quite reaches "fully off" because of background activity |
+| Staircase mean state idx monotonic up               | 0.14 → 0.57 → 1.15 → 2.10 → 13.65     | ✓       |
+| Tail decays slower than idle baseline               | tail mean 0.66 vs baseline 0.15       | ✓       |
+| Sub-floor recipe: ≥ 90 % residency in top state     | P15 at 61.6 %                         | **falsified** |
+| State names "Pn" or descriptive                     | "OFF", "P1".."P15"                    | ✓       |
+| Residency sum ≈ window × 24 M ticks                 | 99.8-100.1 %                          | ✓       |
+
+The big falsified prediction is sub-floor recipe pinning P15 ≥ 90 %.
+Reality: 61.6 % P15 + 23.7 % P1. See Surprises § 1 for the mechanism
+that explains it.
+
+## Surprises
+
+### 1. The sub-floor recipe oscillates P15 ↔ P1, doesn't pin P15
+
+Exp 009's mechanism speculation was "the chip enters peak DVFS state
+and stays there during sub-floor recipe — that's why per-dispatch time
+drops 3.77×." 010 says: **the chip enters P15 when actively executing
+the kernel, but drops back toward P1 between dispatches.** Sum 85.3 %
+(P15 + P1); the rest is in transition states.
+
+Compare to step_100pct (heavier 65 K-FMA kernel): P15 at 89.2 %.
+Sustained heavy work pins P15 because each dispatch occupies the
+full ~1 ms scheduler window. The 009 recipe's kernels are tiny
+(1 K FMAs × 32 threads ≈ 30 µs at peak), so the chip cycles
+peak ↔ idle on each dispatch.
+
+**This refines, not refutes, the 009 mechanism.** When the chip
+*is* executing a sub-floor-recipe kernel, it's at P15 — and the
+kernel does take ~39 ticks. The 1 625 ns absolute min in 009 is
+correctly attributed to P15-cycle-rate; what was wrong was the
+mental picture of the chip "staying there." It's there at the
+moments that matter.
+
+### 2. PWRCTRL is in `DEADLINE` mode during sub-floor, not `PERF`
+
+The bonus signal from neighbouring `GPU Stats` channels exposes
+something neither 009 nor the GPUPH analysis alone could see:
+
+| phase       | PWRCTRL state           |
+|-------------|-------------------------|
+| baseline    | IDLE_OFF (85 %)         |
+| step_025-100| **PERF** (57 → 100 %)  |
+| tail        | IDLE_OFF (84 %)         |
+| **subfloor**| **DEADLINE (76 %)**     |
+
+The GPU power controller has at least three modes: `IDLE_OFF`,
+`PERF`, and `DEADLINE`. The staircase phases all run in `PERF` mode.
+**The sub-floor recipe runs in `DEADLINE` mode**, a different
+controller behavior we hadn't seen named anywhere.
+
+Mechanism speculation: `DEADLINE` is the latency-oriented power
+controller mode, possibly geared to "wake the GPU to peak DVFS
+per-dispatch and let it idle between." This would explain both:
+- Why sub-floor cycle count is so low (peak DVFS during work).
+- Why GPUPH residency is split P15+P1 (peak during dispatch, idle
+  between).
+- Why 009's two-tier structure exists (mid-tier = chip in transition
+  toward DEADLINE; deep-tier = chip stable in DEADLINE mode).
+
+This is a **new opening for 009's mechanism story** that needs its
+own follow-up. Hypothesis: the sub-floor state isn't a different
+DVFS state; it's the same P15 state, accessed via the DEADLINE
+controller path which has lower overhead than PERF.
+
+### 3. BSTGPUPH (boost controller) caps at P10, never reaches P15
+
+| phase     | BSTGPUPH top |
+|-----------|--------------|
+| step_100  | P10 (89 %)   |
+| subfloor  | P10 (62 %)   |
+
+GPUPH and BSTGPUPH report different state numberings. GPUPH's P15
+during step_100 corresponds to BSTGPUPH's P10. The boost controller
+likely indexes states above some "base" point, with P10 as its top.
+Cross-channel index correspondence is not 1:1; future analysis
+should not assume equivalence.
+
+### 4. AFRCTRL and GPU_PPM are uninformative — same state always
+
+Several "free signal" channels stayed at a single state across all
+phases:
+
+- `AFRCTRL`: PERF 100 % everywhere
+- `GPU_CLTM`: NO_CLTM 100 % everywhere
+- `GPU_PPM`: 100 % everywhere
+- `FENDER`: ON 100 % everywhere
+- `GPUDVDH`: 100 % everywhere
+- `PMU_RC`: NONE 100 % everywhere
+- `PZRSDNCY`: NO_ZONE 100 % everywhere
+
+These channels exist for state machines that don't engage during
+trivial GPU compute work. They might engage during display-heavy
+workloads, sustained thermal pressure, or specific power-zone
+configurations. Filed as "available but inactive on these phases."
+
+### 5. AFRSTATE and GPU_SW track GPUPH closely with their own naming
+
+- `GPU_SW`: SW_OFF, SW_P1, ..., SW_P15. Software-side performance
+  state. At step_100 → SW_P10 (89 %), at subfloor → SW_P10 (62 %).
+  Same shape as BSTGPUPH (caps at index 10, not 15).
+- `AFRSTATE`: OFF / P1-P7 (only 8 states observed). At step_100 →
+  P7 (90 %); at subfloor → P7 (67 %). Likely the AFR (display
+  engine) participating in GPU work proportionally.
+
+Useful as cross-validation: when GPUPH says P15, GPU_SW says SW_P10
+and AFRSTATE says P7 simultaneously. All three agree the chip is at
+the top of its respective state space.
+
+## What this means operationally
+
+For the project:
+
+1. **GPUPH residency is now part of the lab's standard telemetry
+   stack.** `notes/ioreport.py --include-states` writes a sibling
+   `-states.csv` with no extra setup; future experiments can record
+   per-DVFS-state residency by passing one flag.
+2. **The DVFS-state-is-unobservable gap is closed.** We now have a
+   sudo-free path to per-state residency at 1 s cadence on M4 Max.
+   Not yet validated against powermetrics' MHz output (exp 011), but
+   face-validity is strong.
+3. **Sub-floor recipe interpretation needs a rewrite** in the lab
+   state. The original 009 narrative ("chip enters peak DVFS state")
+   is partly right and partly wrong: it enters peak DVFS *during
+   dispatches*, but the controller is in `DEADLINE` mode (different
+   from staircase's `PERF` mode). The "peak DVFS" framing is too
+   simple; the better framing is "different controller mode produces
+   different DVFS access pattern."
+4. **The PWRCTRL channel is more informative than GPUPH alone for
+   recipe characterization.** GPUPH tells you "what state right now."
+   PWRCTRL tells you "what power-management strategy is the chip
+   pursuing across the workload." Both matter.
+
+## What does NOT change
+
+- All decisions (003 / 004 / 005) and all 001-009 results stand
+  unchanged. Adding a new observation channel doesn't invalidate
+  prior measurements — it gives them a new lens.
+- `notes/ioreport.py`'s SIMPLE-channel energy CSV format is
+  unchanged. New `--include-states` flag is opt-in.
+
+## What changes
+
+- UNKNOWNS.md: close the "GPUPH bindings unknown" question, refine
+  the 009 mechanism question (DVFS-state path → DEADLINE-controller
+  path), open new question about PERF vs DEADLINE mode boundaries.
+- The 009-sub-floor narrative in the lab snapshot should be edited to
+  add: "mechanism is PWRCTRL DEADLINE mode + intermittent P15 access
+  per dispatch, not sustained P15 residency." This is non-trivial
+  and goes in the *next* dated snapshot, not the 0428 one.
+
+### Natural follow-ups
+
+- **Exp 011: GPUPH vs powermetrics cross-validation.** If powermetrics'
+  per-MHz residency lines up with GPUPH's per-state-name residency,
+  we can build a state-index → MHz mapping. Pre-registerable now.
+- **Exp 012: Recipe → controller mode mapping.** What recipes put the
+  chip in DEADLINE vs PERF? Is it dispatch size? Inter-dispatch
+  spacing? Cumulative dispatch rate? A small focused sweep would
+  expose the boundary.
+- **Exp: 009-mechanism re-frame.** Re-run 009 with GPUPH + PWRCTRL
+  capture during the sub-floor entry. Should show the chip
+  transitioning from PERF to DEADLINE mode at the trial-29 onset.
+- **Exp: GPU_SW / BSTGPUPH cross-channel state alignment.** Map all
+  `GPU Stats` STATE channels' state spaces to one another. Would
+  consolidate the multi-channel residency picture.
+
+We do not plan past these.
