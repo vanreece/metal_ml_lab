@@ -12,14 +12,17 @@ as carefully as the code.
 
 ## Status
 
-Early but moving. As of 2026-04-28, eight experiments are complete on
-Apple M1 Pro (`applegpu_g13s` / macOS 26.3.1) and seven on Apple M4 Max
-(`applegpu_g16s` / macOS 26.4.1). The lab is now structurally
-multi-hardware; methodology decisions are per-chip.
+Early but moving. As of 2026-04-29, thirteen experiments are
+complete (001-008 on both M1 Pro and M4 Max; 009-013 M4 Max only).
+The lab is structurally multi-hardware with methodology decisions
+per-chip. The 009-013 arc characterized the M4 Max DVFS state
+machine in detail; exp 014 (amplification methodology) is
+pre-registered as the bridge to the project's bottleneck-
+classification thesis.
 
 For the current snapshot of what's known, what's open, and what
 methodology applies on each chip, see
-[`notes/state-2026-04-28.md`](notes/state-2026-04-28.md).
+[`notes/state-2026-04-29.md`](notes/state-2026-04-29.md).
 
 Headline status:
 
@@ -31,10 +34,19 @@ Headline status:
   The 42 µs inter-encoder gap on G13 broke the variance-cancellation
   mechanism that decision 003 hypothesized; on G16 the gap collapses
   to ~833 ns and the mechanism works.
-- **Sudo-free Apple Silicon power telemetry is available** via
-  `notes/ioreport.py` (exp 008 MARGINAL pass — usable with a known
-  +14 % bias at full saturation). The previous powermetrics-via-sudo
-  workflow stays available as `notes/gpu_telemetry.py`.
+- **Sudo-free Apple Silicon DVFS observability** is available via
+  `notes/ioreport.py --include-states` (exp 010 PASS). M4 Max GPUPH
+  has 16 states (`OFF + P1..P15`) with a positional MHz mapping
+  recovered (peak 1 578 MHz; non-monotonic in P-index — exp 012).
+  PWRCTRL has 4 modes; DEADLINE entry rule characterized (exp 013).
+- **The M4 Max sub-floor regime** at ~1.7 µs / 39 timestamp ticks is
+  reproducible 5/5 under `fma_loop K=20 sleep_0` (exp 009), driven
+  by PWRCTRL `DEADLINE` mode + brief P15 visits per dispatch
+  (exp 011).
+- **Sudo-free power telemetry** stays available via `notes/ioreport.py`
+  (exp 008 MARGINAL — known +14 % full-load bias). The
+  powermetrics-via-sudo workflow stays available as
+  `notes/gpu_telemetry.py` for tight-tolerance work.
 
 If you found this and want to talk about it, open an issue.
 
