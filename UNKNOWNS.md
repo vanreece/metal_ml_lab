@@ -250,6 +250,30 @@ answer and a link to the experiment that closed it, then moves to
     state DVFS history below the controller-mode layer. Half-life
     sweep (varying inter-attempt gap from 1 s to 5 min) would
     expose where the persistence lives.
+  - ~~**NEW from 011: what triggers PWRCTRL DEADLINE vs PERF?**~~
+    **Closed by 013 (2026-04-28): DEADLINE engages when
+    (FMA_ITERS ≤ 16384) AND (sleep_us ≤ 50).** Rectangular boundary,
+    both axes independent. Heavy kernels (FMA_ITERS=65536) keep
+    PERF regardless of sleep; ≥ 200 µs inter-dispatch gap drops
+    out of DEADLINE regardless of kernel size. Counterintuitive:
+    sleep_50 µs produces *more* DEADLINE residency than sleep_0
+    (48-51 % vs 33-37 %). PWRCTRL mode and GPUPH P15 are
+    independent dimensions — chip can be PERF+P15(94 %), or
+    DEADLINE+P15(20-26 %, cycling), or PERF+low-DVFS depending on
+    recipe.
+  - **NEW from 013: what triggers PRFBOOST?** A fourth PWRCTRL
+    state (alongside IDLE_OFF, PERF, DEADLINE) was enumerated by
+    the 013 bindings but never engaged in any of the 20 cells.
+    Likely candidates: thermal pressure, sustained ≥ 10 min heavy
+    workload, specific PCIe/external GPU conditions. Untested.
+  - **NEW from 013: why does sleep_50 µs trigger DEADLINE more
+    aggressively than sleep_0?** Adding a small inter-dispatch gap
+    *increases* DEADLINE engagement and P15 residency. Hypothesis:
+    the controller recognizes each dispatch as a discrete
+    deadline-bounded task more clearly when there's a brief gap;
+    sleep_0 reads as "continuous workload" closer to PERF
+    semantics. Worth testing 009 with sleep_50 to see if sub-floor
+    entry is faster.
   - **NEW from 009:** what is the minimum recipe to enter the
     sub-floor state? Vary K (5, 10, 20, 50), FMA_ITERS (256, 1024,
     4096), warmup kind. Current recipe is one specific point in a
