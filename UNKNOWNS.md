@@ -129,13 +129,32 @@ answer and a link to the experiment that closed it, then moves to
   on a known fma_loop workload. Direction inverts at tail (-20 %).
   Mechanism not isolated. A focused channel-subset sweep would
   narrow it; pre-registerable as exp 009.
-- **Can we read GPU frequency / per-P-state residency from
-  IOReport?** The `GPU Stats / GPU Performance States` group
-  exposes `GPUPH` (STATE format) — needs IOReportStateGetCount /
-  IOReportStateGetResidency bindings (we have only SimpleGet so
-  far). Useful for "what frequency was the GPU at during this
-  measurement" — would address the longstanding "DVFS state is
-  unobservable" gap.
+- ~~**Can we read GPU frequency / per-P-state residency from
+  IOReport?**~~ **Closed by 010 (2026-04-28): per-state residency,
+  yes. Frequency mapping, not yet.** GPUPH on M4 Max has 16 states
+  (`OFF`, `P1`-`P15`); residency time series tracks workload phases
+  monotonically (PASS verdict, staircase 4/4 monotonic transitions).
+  State names contain no MHz info. Building a state-index → MHz
+  mapping requires powermetrics cross-reference (exp 011). Free
+  bonus: 11 sibling `GPU Stats` STATE channels (BSTGPUPH, GPU_SW,
+  PWRCTRL, AFRSTATE, etc.) come along with the same bindings. See
+  `notes/answered-questions.md`.
+- **NEW from 010:** what determines whether PWRCTRL is in `PERF`
+  vs `DEADLINE` mode? `PERF` mode during staircase (heavy 65K-FMA
+  kernels at variable duty cycle); `DEADLINE` mode during the 009
+  sub-floor recipe (tiny 1K-FMA kernels back-to-back). Plausible
+  driver: dispatch period, kernel duration, or aggregate dispatch
+  rate. A focused recipe sweep would expose the boundary. New
+  experiment candidate.
+- **NEW from 010:** state-index correspondence across `GPU Stats`
+  channels. GPUPH P15 corresponds to BSTGPUPH P10 and AFRSTATE P7
+  (all hit their max simultaneously). Cross-channel mapping is
+  not 1:1 and we don't yet have a model of how the indices relate.
+  Worth a small enumeration if any analysis depends on it.
+- **NEW from 010:** GPUPH idle baseline is 85 % `OFF` + 15 % `P1`
+  even with no GPU work. Background processes / WindowServer keep
+  the GPU non-fully-off. Future "true idle" measurements should
+  account for this floor.
 - **Is there a sudo-free temp / fan-RPM source?** Exp 008's
   IOReport CSV has zero-valued temperature columns because the
   channel-name heuristic doesn't match. The agent-research
@@ -206,11 +225,21 @@ answer and a link to the experiment that closed it, then moves to
   - **NEW from 009:** what is the half-life of the M4 Max sub-floor
     state? Cooldown sweep (1 s, 5 s, 30 s, 5 min, 1 hour) would
     measure it. Currently we only know it's > 5 s.
-  - **NEW from 009:** is the sub-floor state actually a peak-DVFS
-    state, or a different scheduling path with fewer cycles?
-    IOReport at 500 ms is too coarse for trial-level resolution;
-    the GPUPH channel binding (item below in Telemetry) plus
-    higher-cadence sampling would distinguish.
+  - ~~**NEW from 009:** is the sub-floor state actually a peak-DVFS
+    state, or a different scheduling path with fewer cycles?~~
+    **Partially closed by 010 (2026-04-28): both, in a sense.** The
+    sub-floor recipe drives GPUPH to P15 (top state) during
+    dispatches but only 61.6 % of total ticks (vs 89.2 % for the
+    65K-FMA staircase 100 % step). Chip cycles peak ↔ idle on each
+    tiny dispatch. *Also*, PWRCTRL is in `DEADLINE` mode 76 %
+    during sub-floor vs `PERF` mode 100 % during staircase — two
+    different power-controller modes. The 1 625 ns floor is the
+    P15-cycle-rate, but the access pattern (DEADLINE-driven
+    per-dispatch wake-ups) is what makes the recipe special.
+    **Still open:** does the DEADLINE mode persist across attempts
+    (009's cross-attempt deepening) or does each attempt re-enter
+    DEADLINE separately? Re-running 009 with GPUPH + PWRCTRL
+    capture would resolve.
   - **NEW from 009:** what is the minimum recipe to enter the
     sub-floor state? Vary K (5, 10, 20, 50), FMA_ITERS (256, 1024,
     4096), warmup kind. Current recipe is one specific point in a
