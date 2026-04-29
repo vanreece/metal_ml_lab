@@ -73,14 +73,14 @@ MEASURED_GROUP = 32
 WARMUP_THREADS = 32
 WARMUP_GROUP = 32
 
-# Recipe constants.
+# Recipe constants. Defaults match exp 009 verbatim; overridable via
+# CLI so longer attempts can produce enough wall-clock for parallel
+# IOReport telemetry to resolve.
 K = 20                  # warmup dispatches per trial
-N_TRIALS = 84           # measured trials per attempt
-CAL_BURST = 10          # calibration probe dispatches per attempt
-COOLDOWN_S = 5.0        # sleep before calibration probe
+DEFAULT_N_TRIALS = 84
+DEFAULT_CAL_BURST = 10
+DEFAULT_COOLDOWN_S = 5.0
 
-# Sample buffer must hold (CAL_BURST + N_TRIALS) start/end pairs.
-SAMPLE_BUFFER_SLOTS = 2 * (CAL_BURST + N_TRIALS)
 OUT_BUFFER_BYTES = 4 * 1024  # writes from up to 1024-thread fma_loop, comfortably
 
 
@@ -195,9 +195,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--attempt-idx", type=int, required=True)
     ap.add_argument("--output-csv", type=Path, required=True)
+    ap.add_argument("--n-trials", type=int, default=DEFAULT_N_TRIALS)
+    ap.add_argument("--cal-burst", type=int, default=DEFAULT_CAL_BURST)
+    ap.add_argument("--cooldown-s", type=float, default=DEFAULT_COOLDOWN_S)
     ap.add_argument("--append", action="store_true",
                     help="append to output CSV (driver passes after attempt 0)")
     args = ap.parse_args()
+    n_trials = args.n_trials
+    cal_burst = args.cal_burst
+    cooldown_s = args.cooldown_s
 
     qos_result = set_user_interactive_qos()
     pid = os.getpid()
@@ -213,21 +219,23 @@ def main():
     out_buffer = device.newBufferWithLength_options_(
         OUT_BUFFER_BYTES, Metal.MTLResourceStorageModeShared
     )
+    sample_buffer_slots = 2 * (cal_burst + n_trials)
     sample_buffer = make_sample_buffer(
-        device, counter_set, SAMPLE_BUFFER_SLOTS, f"exp009-attempt-{args.attempt_idx}"
+        device, counter_set, sample_buffer_slots, f"exp011-attempt-{args.attempt_idx}"
     )
     arch = device.architecture().name() if (
         hasattr(device, "architecture") and device.architecture()
     ) else "<unavailable>"
-    print(f"[attempt {args.attempt_idx}] device={device.name()} arch={arch}")
+    print(f"[attempt {args.attempt_idx}] device={device.name()} arch={arch} "
+          f"n_trials={n_trials} cal_burst={cal_burst} cooldown_s={cooldown_s}")
 
     # Cooldown so the chip can drop out of any prior elevated state.
-    print(f"[attempt {args.attempt_idx}] cooldown {COOLDOWN_S:.1f}s ...")
-    time.sleep(COOLDOWN_S)
+    print(f"[attempt {args.attempt_idx}] cooldown {cooldown_s:.1f}s ...")
+    time.sleep(cooldown_s)
 
-    # Calibration probe (slots 0..2*CAL_BURST-1)
+    # Calibration probe (slots 0..2*cal_burst-1)
     cal_rows = []
-    for i in range(CAL_BURST):
+    for i in range(cal_burst):
         slot = (2 * i, 2 * i + 1)
         cpu = dispatch_timed(
             queue, write_tid_pipe, out_buffer,
@@ -254,10 +262,10 @@ def main():
     print(f"[attempt {args.attempt_idx}] cal_first={cal_first} "
           f"cal_p50_rest={cal_p50}")
 
-    # Measured trials (slots 2*CAL_BURST .. 2*(CAL_BURST + N_TRIALS) - 1)
+    # Measured trials (slots 2*cal_burst .. 2*(cal_burst + n_trials) - 1)
     meas_rows = []
-    measured_slot_offset = 2 * CAL_BURST
-    for trial_idx in range(N_TRIALS):
+    measured_slot_offset = 2 * cal_burst
+    for trial_idx in range(n_trials):
         for _ in range(K):
             dispatch_untimed(queue, fma_loop_pipe, out_buffer,
                              WARMUP_THREADS, WARMUP_GROUP)

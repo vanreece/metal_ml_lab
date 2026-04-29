@@ -37,7 +37,11 @@ import objc
 
 N_ATTEMPTS = 5
 INTER_ATTEMPT_SLEEP_S = 2.0
-IOREPORT_INTERVAL_MS = 100   # 5x finer than 009 to resolve attempt-level transitions
+IOREPORT_INTERVAL_MS = 250    # finer than 009 (500ms) but lighter than v1 (100ms)
+ATTEMPT_N_TRIALS = 800        # 10x v1 -- gives ~2s measured-trial wall-clock per
+                              # attempt, so multiple IOReport windows fall in
+                              # the active span and analysis can resolve mode
+                              # transitions.
 
 EXPERIMENT_DIR = Path(__file__).resolve().parent
 RAW_DIR = EXPERIMENT_DIR / "raw"
@@ -158,6 +162,7 @@ def main():
                 "uv", "run", str(ATTEMPT_SCRIPT),
                 "--attempt-idx", str(attempt_idx),
                 "--output-csv", str(attempts_csv),
+                "--n-trials", str(ATTEMPT_N_TRIALS),
             ]
             if attempt_idx > 0:
                 cmd.append("--append")
@@ -250,7 +255,7 @@ def main():
         f"ioreport_include_states: True",
         f"recipe: write_tid 32t measured, fma_loop K=20 sleep_0 warmup, "
         f"FMA_ITERS=1024 (verbatim from exp 009)",
-        f"per_attempt_n_trials: 84  per_attempt_calibration: 10  "
+        f"per_attempt_n_trials: {ATTEMPT_N_TRIALS}  per_attempt_calibration: 10  "
         f"per_attempt_cooldown_s: 5.0",
         f"run_start_monotonic_ns: {run_start_ns}",
         f"run_end_monotonic_ns:   {run_end_ns}",

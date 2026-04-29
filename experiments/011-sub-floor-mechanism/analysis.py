@@ -239,6 +239,22 @@ def main():
         delta = p15_pcts[-1] - p15_pcts[0]
         print(f"  attempt 0 -> 4 trend: {trend}  (delta = {delta:+.1f} pct)")
 
+    # All-channel cross-attempt sub-floor scan: look for any signal that
+    # changes monotonically across attempts (would suggest "what carries
+    # across") since PWRCTRL gaps reset to baseline.
+    print()
+    print("=" * 110)
+    print("Cross-attempt scan: top state per attempt's sub-floor era, all GPU Stats channels")
+    print("=" * 110)
+    other_chans = sorted({r["channel"] for r in states})
+    for ch in other_chans:
+        line = [f"  {ch:<10}"]
+        for a in sorted(eras):
+            wins = by_label.get(f"a{a}_subfloor", set())
+            br = aggregate_residency(states, ch, wins)
+            line.append(f"a{a}={fmt_top(br, 1):<14}")
+        print(" ".join(line))
+
 
 if __name__ == "__main__":
     main()
