@@ -191,9 +191,30 @@ answer and a link to the experiment that closed it, then moves to
     compiler threshold as M1 Pro's +21 µs step? AIR / GPU assembly
     inspection would distinguish. Architectural curiosity, not
     blocking methodology.
-  - The ~2 µs sub-floor state from 003 M4 Max — reproducible? A
-    003a-style focused re-run (fma_loop K=20 sleep_0 × 5
-    attempts) would test it.
+  - ~~The ~2 µs sub-floor state from 003 M4 Max — reproducible?~~
+    **Closed by 009 (2026-04-28): YES, STRONG REPRODUCE 5/5.** All
+    5 attempts of `fma_loop K=20 sleep_0` × 84 trials entered the
+    sub-floor state with onset at trial idx 24-33 (003 reference:
+    trial 29). Two new findings: (1) the state has a **deep tier**
+    at ~40 ticks (1 625 ns absolute min, 3.77× cycle reduction
+    from the back-to-back floor's 147 ticks) reachable only after
+    cumulative warmup; (2) **subprocess re-launch + 5-7 s gap does
+    NOT reset the state** — the fast state has half-life > 5 s and
+    deepens across attempts. The "6.4 µs floor" claim from 001-002
+    is the *cool-state* floor, not the fundamental floor. See exp
+    009.
+  - **NEW from 009:** what is the half-life of the M4 Max sub-floor
+    state? Cooldown sweep (1 s, 5 s, 30 s, 5 min, 1 hour) would
+    measure it. Currently we only know it's > 5 s.
+  - **NEW from 009:** is the sub-floor state actually a peak-DVFS
+    state, or a different scheduling path with fewer cycles?
+    IOReport at 500 ms is too coarse for trial-level resolution;
+    the GPUPH channel binding (item below in Telemetry) plus
+    higher-cadence sampling would distinguish.
+  - **NEW from 009:** what is the minimum recipe to enter the
+    sub-floor state? Vary K (5, 10, 20, 50), FMA_ITERS (256, 1024,
+    4096), warmup kind. Current recipe is one specific point in a
+    larger space.
   - Cross-thermal-state ratio stability (M4 Max). 006 covered
     30-min idle gap; longer / hotter conditions untested.
 

@@ -710,6 +710,13 @@ warmup-recipe libraries are not viable.
 
 #### 2. A sub-floor ~2 µs settled state exists on M4 Max — reached late in fma_loop K=20 sleep_0
 
+> **Update (2026-04-28, post-009):** validated and characterized.
+> Exp 009 reproduced this state 5/5 with onset at trial idx 24-33,
+> found a deep tier at ~40 ticks (1 625 ns absolute min), and
+> showed cross-attempt persistence (state survives subprocess
+> re-launch + 7 s gap). The 003 single-combo finding generalized.
+> See `experiments/009-sub-floor-reproduction/README.md`.
+
 M1 Pro 003 stumbled into a 5.4 µs state in its very first combo
 (later filed as non-reproducible by 004). M4 Max 003 stumbled into a
 **~2-4 µs state** in the LAST trials of one specific combo:
