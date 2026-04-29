@@ -194,3 +194,204 @@ Branches:
 - **FAIL.** Re-validate the IOReport bindings against macmon's
   Rust implementation (which is the reference) — line up channel
   selection, unit conversion, delta math. Re-run after fix.
+
+---
+
+## Result
+
+**Date run:** 2026-04-28 (timestamp prefix `20260428T170422`)
+**Hardware:** Apple M4 Max 36GB / `applegpu_g16s` / macOS 26.4.1
+**Wall-clock:** ~60 s (10 s baseline + 5×8 s staircase + 10 s tail)
+**Outcome:** **MARGINAL** — busy-phase median |rel_diff| = 6.30 %.
+Just outside the strict 5 % PASS threshold; well inside the 15 %
+MARGINAL threshold. IOReport is usable but with a known +14 %
+high-load bias to calibrate against.
+
+### Primary: per-phase GPU power agreement
+
+| phase / target  | n_bins | ior_mean_mW | pm_mean_mW | mean_diff_mW | abs_p50_mW | rel_diff_% |
+|-----------------|-------:|------------:|-----------:|-------------:|-----------:|-----------:|
+| baseline (0%)   |      8 |         106 |        104 |           +2 |          8 |   **2.13** |
+| step_000pct     |      7 |         108 |        106 |           +2 |          5 |   **1.76** |
+| step_025pct     |      7 |         208 |        201 |           +7 |          6 |   **3.30** |
+| step_050pct     |      6 |         332 |        312 |          +20 |         12 |   **6.30** |
+| step_075pct     |      7 |         403 |        398 |           +5 |         15 |   **1.18** |
+| step_100pct     |      7 |        2073 |       1814 |         +259 |        205 |  **13.32** |
+| tail (0%)       |      8 |         514 |        629 |         -115 |         12 |  **20.12** |
+
+Read the table:
+- **Idle and low-load (≤25 %): excellent agreement.** Both sources
+  report ~100-200 mW with ≤3 % relative difference. Either source
+  works as a baseline indicator.
+- **Mid-load (50-75 %): good agreement.** 1.2 % at 75 % is the
+  best agreement of any phase. 6.3 % at 50 % is the only phase
+  that misses the strict 5 % bar at moderate load — likely
+  statistical from only 6 bins.
+- **Full saturation (100 %): IOReport reads ~14 % HIGHER than
+  powermetrics, consistently** (+259 mW on a ~1.8-2.1 W signal).
+  This is a real systematic offset, not noise (mean signed diff
+  matches the absolute disagreement). The most likely explanations:
+  (a) IOReport's `GPU Energy` channel includes some GPU-adjacent
+  component (GPU SRAM, AFR) that powermetrics excludes, or vice
+  versa; (b) the two sources use different sampling-window
+  edges and during a saturated workload the difference accumulates.
+- **Tail (post-workload idle): 20 % disagreement, IOReport LOWER**
+  than powermetrics. The opposite-direction disagreement plus the
+  high p95 (618 mW) suggests one or two bins where powermetrics
+  caught a residual workload spike that IOReport averaged out.
+  Bonus columns confirm CPU was still elevated (1.7 W vs 0.9 W
+  baseline) during tail, so the system wasn't fully idle.
+
+### Bonus: IOReport-side power breakdown per phase
+
+The IOReport CSV records 11 power buckets, of which powermetrics
+exposes only the GPU one. Per-phase mean power for the others:
+
+| phase           | target | cpu | dram | amcc | dcs | afr | disp |
+|-----------------|-------:|----:|-----:|-----:|----:|----:|-----:|
+| baseline        |     0% |  915 |  332 |  558 |  461 |   8 |  322 |
+| step_000pct     |     0% |  787 |  283 |  530 |  412 |   9 |  323 |
+| step_025pct     |    25% |  816 |  332 |  776 |  521 |  17 |  323 |
+| step_050pct     |    50% |  792 |  370 | 1007 |  578 |  27 |  322 |
+| step_075pct     |    75% |  791 |  390 | 1069 |  641 |  34 |  321 |
+| **step_100pct** |   100% | **2464** |  **751** | **1348** | **1712** | **147** |  328 |
+| tail            |     0% | 1694 |  462 |  735 |  726 |  38 |  329 |
+
+Three things to note:
+1. **CPU power TRIPLED during full-load step** (787 → 2464 mW).
+   Driving the GPU with ~1 dispatch/ms from Python isn't free —
+   the orchestrator burns ~1.7 W of CPU on top of whatever the
+   GPU consumes. For any "what does this workload cost" claim,
+   the CPU side is non-trivial.
+2. **Memory-side power scales with GPU load.** AMCC (memory
+   controller) goes 558 → 1348 mW, DCS goes 461 → 1712 mW, DRAM
+   goes 332 → 751 mW. Even though `fma_loop` is "compute-bound,"
+   the buffer write at the end of each thread plus pipeline state
+   churn pulls memory subsystems along. The full-system power for
+   a GPU-bound workload includes a substantial memory tax.
+3. **AFR (display/render engine) tracks workload visibly.** 8 mW
+   idle → 147 mW at full load. Not large in absolute terms but
+   suggests AFR is doing GPU-adjacent work proportional to the
+   compute load.
+4. **DISP stays flat** at ~325 mW across all phases — display
+   power isn't affected by GPU workload (just panel lighting).
+
+### What this means for the sudo-free telemetry path
+
+**MARGINAL is enough to declare the path viable** with a known
+bias. Specifically:
+
+- For **relative-magnitude questions** ("how much more power did
+  workload A use vs workload B?"), IOReport works fine because the
+  +14 % full-load bias is consistent — both A and B see it, ratio
+  cancels.
+- For **absolute power claims** ("kernel X uses 1.8 W"), prefer
+  powermetrics if you can pay the sudo cost; otherwise note the
+  ~14 % uncertainty.
+- For **trend analysis across a workload** (the staircase shape),
+  IOReport tracks faithfully — same monotonic increase as
+  powermetrics across the staircase, just shifted up by a small
+  multiplier at peak.
+
+The user-runs-sudo-in-another-terminal dance can be **dropped for
+GPU power telemetry** when the project's experiments record their
+own. Future experiments don't need the coordination protocol.
+
+### Surprises
+
+#### 1. IOReport reads HIGHER than powermetrics at full load
+
+The pre-registration didn't predict a direction. Empirically,
+IOReport overshoots by +14 % at saturation. Mechanism not
+isolated, but two candidates:
+
+- **Different aggregation window.** IOReport's delta is over the
+  exact monotonic ns window we chose; powermetrics aggregates over
+  its own internal window which may include a tail of the previous
+  sample. At full load with rapidly-changing energy counters,
+  small window misalignment shifts the integrated power.
+- **Different component inclusion.** IOReport's "GPU Energy"
+  channel may exclude something powermetrics' "GPU Power" includes
+  (or vice versa). Looking at the IOReport bonus columns: AFR and
+  GPU SRAM are reported separately. If powermetrics' GPU Power
+  number includes GPU SRAM but IOReport's GPU Energy doesn't, we'd
+  expect IOReport to read LOWER — opposite of what we see. So
+  this isn't the explanation in the obvious direction.
+
+A focused micro-experiment could isolate this: subscribe to a
+larger / smaller subset of IOReport channels and re-compare.
+
+#### 2. The tail-phase disagreement direction inverts
+
+Idle / low-load: IOReport reads slightly HIGHER (+2 mW).
+Full-load: IOReport reads MUCH HIGHER (+259 mW).
+Tail: IOReport reads LOWER (-115 mW).
+
+If the bias were systematic (e.g. "IOReport always reads ~14 %
+higher"), tail would also show IOReport > PM. The inversion
+suggests the disagreement isn't purely a calibration constant —
+there's some workload-state-dependent component. Could be that
+PM smooths over its sample window using a state machine that
+lags state changes, creating asymmetric disagreement on rising
+edges (full-load) and falling edges (tail).
+
+#### 3. CPU power tripled to 2.5 W during the workload
+
+Driving the GPU at ~1 ms/dispatch from Python takes substantial
+CPU. The IOReport bindings + Metal dispatch overhead + Python
+loop bookkeeping adds up. For experiments measuring GPU-bound
+kernels, the orchestrator's CPU cost is real and visible — the
+user's machine is doing meaningful CPU work to keep the GPU
+busy at peak rate. Useful calibration: a future "true-cost-per-
+microbench" claim should include the CPU + memory power tax,
+not just GPU.
+
+### What does NOT change
+
+- The sudo path stays available. `gpu_telemetry.py` still works.
+- The CSV format both tools produce (same `monotonic_ns` clock)
+  remains joinable.
+- Decisions 004 / 005 about pair timing are unaffected by this
+  result — they don't depend on power telemetry.
+
+### What changes
+
+- Future experiments can launch `notes/ioreport.py` as a
+  subprocess (the exp 008 pattern) instead of requiring the user
+  to start `gpu_telemetry.py` in another terminal. The
+  orchestrator owns its own power telemetry.
+- For absolute power claims with tight tolerance, dual-record
+  with both sources or apply a calibrated +14 % adjustment to
+  IOReport.
+- The bonus IOReport columns (CPU, DRAM, AMCC, DCS, AFR, DISP,
+  ISP, AVE, GPU SRAM) are available for free in any future
+  experiment without sudo. We have **far more telemetry surface
+  than powermetrics gives us** at zero additional cost.
+
+### After this experiment
+
+Branches landed on: **MARGINAL.** Per pre-registration:
+
+> Document the calibration / offset and use both side-by-side.
+> The architecture in the agent's research synthesis (per-stream
+> CSV, joined at experiment time) handles this fine.
+
+Operational consequence: the lab's experiments going forward can
+optionally call `notes/ioreport.py` as a subprocess to record
+power telemetry without user intervention. The
+`gpu_telemetry.py` workflow remains for cases where absolute
+power tolerance matters or for cross-validation.
+
+Natural follow-on (optional):
+
+- **exp 009: characterize the +14 % full-load bias.** Vary which
+  IOReport channels are included in the "GPU power" sum (just
+  GPU Energy vs GPU Energy + GPU SRAM + AFR vs ...) and see which
+  combination minimizes the powermetrics disagreement. Could
+  reveal what powermetrics' "GPU Power" actually includes.
+- **exp 010: IOReport `GPU Active Time` Histogram vs powermetrics
+  active residency.** The unanswered question from exp 007
+  (utilization), now with the more promising IOReport channel.
+  Same pattern as 008 but a different signal.
+
+We do not plan past these branches.

@@ -1,0 +1,23 @@
+experiment: 008-ioreport-vs-powermetrics-power
+timestamp: 20260428T170422
+device: Apple M4 Max
+architecture: applegpu_g16s
+chip: arm  machine: arm64
+os: macOS-26.4.1-arm64-arm-64bit-Mach-O
+python: 3.14.4 (main, Apr 14 2026, 14:46:33) [Clang 22.1.3 ]
+pyobjc: 12.1
+qos: pthread_set_qos_class_self_np -> 0
+power: Now drawing from 'AC Power'
+powermetrics_csv: raw/PMTELEM.csv
+ioreport_csv: 20260428T170422-ioreport.csv
+phases_csv: 20260428T170422-phases.csv
+dispatches_csv: 20260428T170422-dispatches.csv
+workload_kernel: fma_loop iters=65536 threads=32
+staircase_steps: [0.0, 0.25, 0.5, 0.75, 1.0]
+step_duration_s: 8.0
+baseline_s: 10.0
+tail_s: 10.0
+telemetry_interval_ms: 1000
+run_start_monotonic_ns: 16470196221083
+run_end_monotonic_ns:   16530461625208
+run_wall_clock_s: 60.27
