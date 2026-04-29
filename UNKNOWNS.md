@@ -227,19 +227,28 @@ answer and a link to the experiment that closed it, then moves to
     measure it. Currently we only know it's > 5 s.
   - ~~**NEW from 009:** is the sub-floor state actually a peak-DVFS
     state, or a different scheduling path with fewer cycles?~~
-    **Partially closed by 010 (2026-04-28): both, in a sense.** The
-    sub-floor recipe drives GPUPH to P15 (top state) during
-    dispatches but only 61.6 % of total ticks (vs 89.2 % for the
-    65K-FMA staircase 100 % step). Chip cycles peak ↔ idle on each
-    tiny dispatch. *Also*, PWRCTRL is in `DEADLINE` mode 76 %
-    during sub-floor vs `PERF` mode 100 % during staircase — two
-    different power-controller modes. The 1 625 ns floor is the
-    P15-cycle-rate, but the access pattern (DEADLINE-driven
-    per-dispatch wake-ups) is what makes the recipe special.
-    **Still open:** does the DEADLINE mode persist across attempts
-    (009's cross-attempt deepening) or does each attempt re-enter
-    DEADLINE separately? Re-running 009 with GPUPH + PWRCTRL
-    capture would resolve.
+    **Partially closed by 010 + 011 (2026-04-28).** Mechanism is
+    DEADLINE-mode controller + brief P15 visits per dispatch.
+    011 STRONG SUPPORT 5/5: DEADLINE residency 30.7-48.0 % in every
+    sub-floor attempt; cross-attempt deepening visible across
+    multiple channels (DEADLINE 33 % → 48 %, P15 6 % → 15 %,
+    AFRSTATE flips to P7-top by attempt 4). The 1 625 ns floor
+    (= 39 ticks of 24 MHz) is the P15-cycle-rate during visits,
+    not residency-weighted average.
+  - ~~**NEW from 009:** does the DEADLINE mode persist across
+    attempts (009's cross-attempt deepening)?~~ **Closed by 011 as
+    NO** for PWRCTRL state specifically: every inter-attempt gap
+    looks identical (PERF 56 % + IDLE_OFF 43 %, no DEADLINE), yet
+    the next attempt enters sub-floor faster and deeper than the
+    prior one. Persistence isn't in observed PWRCTRL/GPUPH state.
+  - **NEW from 011: what carries across attempts to drive cross-
+    attempt deepening?** Inter-attempt gaps fully reset PWRCTRL
+    and GPUPH to baseline, yet the next attempt enters faster.
+    Candidates: thermal (chip warmer at attempt-N entry), driver-
+    side state (kernel scheduler, dispatch-pattern history), per-
+    state DVFS history below the controller-mode layer. Half-life
+    sweep (varying inter-attempt gap from 1 s to 5 min) would
+    expose where the persistence lives.
   - **NEW from 009:** what is the minimum recipe to enter the
     sub-floor state? Vary K (5, 10, 20, 50), FMA_ITERS (256, 1024,
     4096), warmup kind. Current recipe is one specific point in a
