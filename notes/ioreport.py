@@ -125,6 +125,16 @@ ioreport.IOReportChannelGetUnitLabel.restype = ctypes.c_void_p
 ioreport.IOReportSimpleGetIntegerValue.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
 ioreport.IOReportSimpleGetIntegerValue.restype = ctypes.c_int64
 
+# STATE-channel inspectors. Same shape as the SIMPLE getter -- take a
+# channel CFDictionary, plus an integer state index for the per-state
+# variants. Signatures cross-checked against macmon (Rust).
+ioreport.IOReportStateGetCount.argtypes = [ctypes.c_void_p]
+ioreport.IOReportStateGetCount.restype = ctypes.c_int32
+ioreport.IOReportStateGetNameForIndex.argtypes = [ctypes.c_void_p, ctypes.c_int32]
+ioreport.IOReportStateGetNameForIndex.restype = ctypes.c_void_p
+ioreport.IOReportStateGetResidency.argtypes = [ctypes.c_void_p, ctypes.c_int32]
+ioreport.IOReportStateGetResidency.restype = ctypes.c_int64
+
 # Format codes (from IOKit headers; what we actually care about):
 IOREPORT_FORMAT_NONE = 0
 IOREPORT_FORMAT_SIMPLE = 1
@@ -380,6 +390,9 @@ def cmd_dashboard(args) -> int:
     bucket_keys = list(ENERGY_BUCKETS.keys())   # stable column order
     csv_writer = None
     csv_file = None
+    states_writer = None
+    states_file = None
+    states_csv_path = None
     if args.csv:
         csv_file = open(args.csv, "w", newline="")
         csv_writer = csv.writer(csv_file)
@@ -390,14 +403,30 @@ def cmd_dashboard(args) -> int:
             header.append(f"{k}_energy_nj")
         csv_writer.writerow(header)
 
+        if args.include_states:
+            # Sibling file: foo.csv -> foo-states.csv.
+            base = Path(args.csv)
+            states_csv_path = base.with_name(base.stem + "-states" + base.suffix)
+            states_file = open(states_csv_path, "w", newline="")
+            states_writer = csv.writer(states_file)
+            states_writer.writerow([
+                "iso_ts", "monotonic_ns", "window_s",
+                "group", "subgroup", "channel",
+                "state_idx", "state_name",
+                "residency_24Mticks",
+            ])
+
     print(f"# IOReport telemetry  interval={args.interval_ms}ms"
-          + (f"  csv={args.csv}" if args.csv else ""))
+          + (f"  csv={args.csv}" if args.csv else "")
+          + (f"  states_csv={states_csv_path}" if states_csv_path else ""))
     print(f"# Ctrl-C to stop")
     print(f"# {'time':<8}  " + "  ".join(f"{k:>5} mW" for k in bucket_keys))
 
     def shutdown(_signum=None, _frame=None):
         if csv_file:
             csv_file.close()
+        if states_file:
+            states_file.close()
         sub.close()
         sys.exit(0)
     signal.signal(signal.SIGINT, shutdown)
@@ -413,17 +442,32 @@ def cmd_dashboard(args) -> int:
         if delta is None:
             continue   # first iteration, no prev to delta against
 
+        iso_ts = datetime.now().isoformat(timespec="microseconds")
+        mono_ns = time.monotonic_ns()
+
         # Build a name-indexed map for O(1) bucket-name lookup.
         per_name_nj: dict[str, int] = {}
+        state_rows: list[list] = []
         for chan in iterate_channels(delta):
             meta = channel_metadata(chan)
-            if meta["group"] not in ENERGY_GROUPS:
-                continue
-            if meta["format"] != IOREPORT_FORMAT_SIMPLE:
-                continue
-            name = meta["name"] or ""
-            value = ioreport.IOReportSimpleGetIntegerValue(chan, None)
-            per_name_nj[name] = per_name_nj.get(name, 0) + energy_to_nj(value, meta["unit"])
+            fmt = meta["format"]
+            if fmt == IOREPORT_FORMAT_SIMPLE:
+                if meta["group"] not in ENERGY_GROUPS:
+                    continue
+                name = meta["name"] or ""
+                value = ioreport.IOReportSimpleGetIntegerValue(chan, None)
+                per_name_nj[name] = per_name_nj.get(name, 0) + energy_to_nj(value, meta["unit"])
+            elif fmt == IOREPORT_FORMAT_STATE and states_writer is not None:
+                n_states = ioreport.IOReportStateGetCount(chan)
+                for idx in range(n_states):
+                    name_cf = ioreport.IOReportStateGetNameForIndex(chan, idx)
+                    sname = cfstring_to_str(name_cf) if name_cf else None
+                    resid = ioreport.IOReportStateGetResidency(chan, idx)
+                    state_rows.append([
+                        iso_ts, mono_ns, round(window_s, 6),
+                        meta["group"], meta["subgroup"], meta["name"],
+                        idx, sname, resid,
+                    ])
 
         cf.CFRelease(delta)
 
@@ -438,8 +482,8 @@ def cmd_dashboard(args) -> int:
 
         if csv_writer:
             row = [
-                datetime.now().isoformat(timespec="microseconds"),
-                time.monotonic_ns(),
+                iso_ts,
+                mono_ns,
                 round(window_s, 6),
             ]
             for k in bucket_keys:
@@ -448,6 +492,11 @@ def cmd_dashboard(args) -> int:
                 row.append(bucket_nj[k])
             csv_writer.writerow(row)
             csv_file.flush()
+
+        if states_writer:
+            for srow in state_rows:
+                states_writer.writerow(srow)
+            states_file.flush()
 
 
 # ---------------------------------------------------------------------
@@ -460,6 +509,10 @@ def main() -> int:
                     help="sample interval in ms (default 1000)")
     ap.add_argument("--csv", type=str, default=None,
                     help="write per-sample CSV with monotonic_ns")
+    ap.add_argument("--include-states", action="store_true",
+                    help="also emit a sibling -states.csv with per-state "
+                         "residency for every STATE-format channel "
+                         "(GPUPH, BSTGPUPH, PWRCTRL, etc.)")
     args = ap.parse_args()
 
     if args.list:
