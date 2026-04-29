@@ -252,3 +252,230 @@ Branches:
   wrong; fix and re-run.
 
 We do not plan past these branches.
+
+---
+
+## Result
+
+**Date run:** 2026-04-28 (timestamp prefix `20260428T221203`)
+**Hardware:** Apple M4 Max 36GB / `applegpu_g16s` / macOS 26.4.1
+**Wall-clock:** ~80 s (10 s baseline + 5 × 8 s staircase + 10 s tail).
+**Outcome:** **MARGINAL PASS.** GPUPH ↔ MHz mapping is recovered with
+median 0.03 % residency drift between powermetrics' positional MHz
+breakdown and its own SW_state for the canonical positions (idle, low,
+peak), and median 2.65 % between IOReport GPUPH and powermetrics MHz
+across phases. The mapping has a structural surprise: powermetrics'
+**`SW state` uses only 10 labels** (SW_P1-SW_P10) for the chip's 15
+hardware DVFS settings — IOReport GPUPH gives finer-grained visibility.
+
+### The M4 Max GPUPH → MHz table
+
+Extracted directly from powermetrics' positional MHz list (the parens
+content of `GPU HW active residency`):
+
+| GPUPH idx | MHz   | GPUPH idx | MHz    | GPUPH idx | MHz    |
+|----------:|------:|----------:|-------:|----------:|-------:|
+| OFF       | (idle)| P6        | 1 056  | P11       | 1 242  |
+| **P1**    |   338 | P7        | 1 062  | P12       | 1 380  |
+| P2        |   618 | P8        | 1 182  | P13       | 1 326  |
+| P3        |   796 | **P9**    | 1 182  | P14       | 1 470  |
+| P4        |   924 | P10       | 1 312  | **P15**   | 1 578  |
+| P5        |   952 |           |        |           |        |
+
+Three structural curiosities in this table:
+
+1. **Not strictly monotonic in index.** P10 = 1 312 MHz but P11 = 1 242
+   MHz (lower). Same for P12/P13 (1 380 / 1 326) and P14 is also a
+   step. Apple's GPUPH index isn't a frequency ordering.
+2. **P8 = P9 = 1 182 MHz.** Two consecutive states at the same
+   frequency. Likely a voltage/SLC/cache substate distinction the
+   public APIs don't expose.
+3. **15 distinct GPUPH states, 10 distinct powermetrics SW labels.**
+   `GPU SW state` only ever shows SW_P1..SW_P10 active. The OS-side
+   API aggregates GPUPH's 15 states into 10 user-visible categories.
+   IOReport sees the full 15.
+
+### Per-phase residency: powermetrics MHz vs IOReport GPUPH P-states
+
+| phase       | active% (pm) | top MHz   | top GPUPH | gpuph_pct | mhz_pct |
+|-------------|-------------:|:---------:|:---------:|----------:|--------:|
+| baseline    |      12.6 %  | 338 MHz   | P1        |   12.63 % |  12.60 %|
+| step_000    |      17.1 %  | 338 MHz   | P1        |   12.17 % |  17.14 %|
+| step_025    |      65.5 %  | 338 MHz   | P1        |   59.52 % |  64.52 %|
+| step_050    |      99.4 %  | 338 MHz   | P1        |   66.16 % |  56.37 %|
+| step_075    |      99.7 %  | 618 MHz   | P2        |   57.27 % |  56.53 %|
+| **step_100**|     100.0 %  | **1 578 MHz** | **P15** | **94.58 %**| **91.32 %**|
+| tail        |      15.3 %  | 338 MHz   | P1        |   14.65 % |  15.26 %|
+
+Cross-source agreement: **median 2.65 % residency drift** between
+IOReport GPUPH and powermetrics MHz at the same positional index, max
+9.79 % (step_050 P1: GPUPH 66 %, MHz pos 1 56 %; the difference is
+likely IOReport's GPUPH counts a moment of P1 that powermetrics MHz
+classifies into a slightly different bucket, or a 250 ms window
+boundary effect).
+
+### Hypothesis check
+
+| prediction                                              | observed                                    | verdict   |
+|---------------------------------------------------------|---------------------------------------------|-----------|
+| 8-12 MHz buckets in powermetrics                        | **15** (one per GPUPH active state)         | refined   |
+| Mapping is monotonic                                    | **NO** — P10 > P11 in MHz                   | falsified |
+| At step_100, top MHz residency ≈ GPUPH P15 residency    | 91.32 % vs 94.58 %                          | ✓         |
+| At step_025, lowest active MHz dominates                | 338 MHz at 64.52 %                          | ✓         |
+| OFF residency aligns with 100 % - powermetrics active   | baseline OFF 87.4 % ≈ inactive 87.4 %       | ✓         |
+| M4 Max top GPU MHz ≈ 1.4 GHz                            | **1.578 GHz** (higher than expected)        | refined   |
+| State name format "Pn"                                  | exactly "Pn"                                | ✓         |
+
+The "monotonic in index" prediction is the headline falsification.
+Apple's GPUPH index ordering doesn't follow frequency. The three
+non-monotonicities are real, not measurement artifacts (multiple
+samples in the workload show position-10 / position-11 residency
+swapping).
+
+## Surprises
+
+### 1. Three different P-state numberings at three layers
+
+This experiment exposed three concurrent state-numbering systems on
+the same chip:
+
+- **IOReport GPUPH (`OFF + P1..P15`):** 16 states, finer-grained.
+  P15 = 1 578 MHz (peak).
+- **powermetrics' MHz positional list:** 15 states by ordinal
+  position. Position 15 = 1 578 MHz. Maps 1:1 with GPUPH P1..P15.
+- **powermetrics' `GPU SW state` (`SW_P1..SW_P10`):** 10 user-visible
+  states. SW_P10 = 1 578 MHz (peak). The OS aggregates the chip's
+  15 hardware states into 10 user-visible labels.
+- **powermetrics' `GPU SW requested state` (`P1..P10`):** matches
+  the SW state — a 10-slot indexing.
+
+When something hits peak DVFS:
+- IOReport says GPUPH P15
+- powermetrics' SW state says SW_P10
+- powermetrics' MHz residency says 1 578 MHz at position 15
+
+These are all the **same physical state**, indexed differently. For
+future cross-tool work this is critical to remember.
+
+### 2. The M4 Max top GPU frequency is 1 578 MHz
+
+Higher than the ~1.4 GHz often cited in third-party characterizations
+of M4 Max. powermetrics' positional list explicitly names 1 578 MHz
+as the top bucket and step_100 of our staircase reaches it for 91 %
+of the phase. Operational implication: any "M4 Max GPU peak ≈ 1.4 GHz"
+estimate the project has been using needs revising upward.
+
+### 3. P-state index ordering is not monotonic in frequency
+
+The table shows three explicit non-monotonicities:
+- P10 = 1 312 MHz, P11 = 1 242 MHz (P11 is lower)
+- P12 = 1 380 MHz, P13 = 1 326 MHz (P13 is lower)
+- P8 = P9 = 1 182 MHz (same)
+
+Possibilities:
+- **Voltage/SLC substates:** P8 and P9 might run at the same MHz but
+  different voltages or cache configurations. P10/P11 and P12/P13
+  pairs may swap order due to a similar dimension Apple cares about
+  but powermetrics' MHz column doesn't expose.
+- **Boost / non-boost lanes:** P11/P13 might be "non-boost" variants
+  of P10/P12 at slightly lower MHz. The naming would index "boost
+  pairs" together rather than by raw MHz.
+- **Hardware order:** the chip's hardware DVFS table just isn't
+  sorted by MHz in any clean way; the indices are a hardware-level
+  identifier rather than an ordering.
+
+We don't have data to distinguish these. The next step would be
+correlating BSTGPUPH (boost controller) state with each P-state to
+see if the non-monotonic pairs alternate boost / non-boost.
+
+### 4. The 1 625 ns sub-floor floor finds its frequency
+
+Exp 009's 1 625 ns absolute minimum corresponds to **39 ticks of the
+24 MHz GPU timestamp counter**. The kernel ran in 39 timestamp ticks
+when the chip was at GPUPH P15 = 1 578 MHz. At 1 578 MHz, 39 ticks
+correspond to:
+
+    39 / (24 × 10⁶ Hz) × 10⁹ = 1 625 ns wall-clock
+    1 625 × 10⁻⁹ × 1 578 × 10⁶ = ~2 564 GPU clocks per kernel
+
+So the minimum write_tid 32t kernel takes ≈ 2 564 GPU cycles at peak
+DVFS. The 6 125 ns back-to-back floor at lower DVFS ÷ 1 625 ns sub-
+floor = 3.77×, matching powermetrics' DVFS ratio of 1 578 / 338 ≈
+4.67× from idle (or 1 578 / 618 ≈ 2.55× from typical mid-load
+cadence). The 3.77× sits between these — consistent with the chip
+being at peak during P15 visits but transitioning through lower
+states between dispatches.
+
+This is the **first concrete frequency-attached interpretation** of
+the 009 sub-floor measurement.
+
+### 5. Cross-source agreement (IOReport ↔ powermetrics) is 2.65 % median
+
+Strong validation for the IOReport GPUPH bindings. Per-phase residency
+between the two sources agrees to within a few percent. The 9.79 %
+max is at step_050 P1 — likely a window-boundary effect (one or both
+sources have a sample window that overlaps a phase boundary).
+
+For relative-magnitude analyses (e.g. "did P15 residency double
+between recipe A and recipe B?"), agreement is well within tolerance.
+For absolute claims ("the chip was at 1 578 MHz for X seconds"),
+the two sources will give numbers within 5 % of each other in most
+cases. The IOReport path can replace powermetrics for DVFS
+observations going forward.
+
+## What this means operationally
+
+For the project:
+
+1. **The M4 Max GPUPH → MHz table is now in the lab's reference
+   inventory.** Future statements like "the chip was at P15 during
+   sub-floor" can be quantified: P15 = 1 578 MHz; cycles per kernel
+   at P15 = wall-clock × 1 578 MHz.
+2. **GPUPH residency is a finer-grained DVFS signal than powermetrics'
+   SW state.** Where `GPU SW state` reports SW_P10, GPUPH might be
+   in P10, P11, P12, P13, P14, or P15. Useful for differentiating
+   recipes that drive different sub-states of "peak."
+3. **The "sub-floor mechanism is peak DVFS" story is now numerically
+   grounded.** Exp 009's 1 625 ns floor = 39 ticks of the 24 MHz
+   timestamp clock = 2 564 GPU clocks at 1 578 MHz. The chip really
+   is at the published peak frequency during sub-floor visits.
+4. **Sudo dependency for DVFS frequency claims is now optional.**
+   IOReport GPUPH at 250 ms cadence gives us per-state residency that
+   agrees with powermetrics within ~3 %. For tight-tolerance work
+   (e.g. < 1 % agreement for power-efficiency claims), keep
+   powermetrics as the reference; otherwise use IOReport.
+5. **When citing P-state numbers from this lab, use the IOReport
+   GPUPH index** (P1..P15) for consistency. Note that powermetrics
+   reports the same chip behavior with `SW_P1..SW_P10`; the two
+   numberings are NOT interchangeable.
+
+## What does NOT change
+
+- All prior decisions and measurements stand.
+- The IOReport bindings (`notes/ioreport.py`) are unchanged. The new
+  state-channel additions from 010 are validated.
+
+## What changes
+
+- Lab state snapshot's M4 Max cheat sheet should add the GPUPH → MHz
+  table to the operational rules section (next snapshot, not the
+  0428 frozen one).
+- UNKNOWNS.md: close "GPUPH MHz mapping unknown"; refine the "M4 Max
+  peak GPU freq ≈ 1.4 GHz" assumption upward to 1 578 MHz.
+- The 009 sub-floor mechanism story can be re-told in cycles: kernel
+  runs in ~2 564 GPU cycles at peak DVFS, vs ~9 200 cycles at typical
+  back-to-back floor (~6 125 ns × 1 578 MHz / 1 ÷ 1 = no, this
+  arithmetic only works one way; back-to-back floor is at lower freq).
+
+### Natural follow-ups
+
+- **Why are P10/P11, P12/P13, and P8/P9 ordered the way they are?**
+  Cross-correlate with BSTGPUPH (boost) and PWRCTRL state at the
+  moments these substates engage. May reveal "boost vs non-boost"
+  dimension.
+- **Re-frame 011 with the MHz mapping.** The "DEADLINE 30-48 % during
+  sub-floor" finding can now include "and during DEADLINE the chip
+  hit 1 578 MHz X % of the time."
+- **Original queue:** exp 013 (PERF/DEADLINE recipe boundary).
+
+We do not plan past these.

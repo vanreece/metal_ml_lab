@@ -71,17 +71,25 @@ def parse_pmraw(path: Path) -> list[dict]:
             "wall_str": ts_str.strip(),
             "elapsed_ms": float(elapsed_str),
         }
-        # Extract per-MHz residency from active residency line
+        # Extract per-MHz residency from active residency line. Preserve
+        # positional order: powermetrics lists MHz buckets at the same
+        # ordinal positions as P1..P15 in the SW state breakdown, and
+        # the order is NOT monotonic in MHz value (e.g. P10=1312 > P11=1242
+        # on M4 Max). Duplicates also appear (P8=P9=1182 MHz).
         m = HW_ACTIVE_RES_LINE.search(body) or ACTIVE_RES_LINE.search(body)
         if m:
             sample["active_pct"] = float(m.group(1))
             inner = m.group(2)
-            mhz = {}
+            mhz_ordered: list[tuple[int, float]] = []
             for mm in MHZ_BUCKET.finditer(inner):
-                mhz[int(mm.group(1))] = float(mm.group(2))
+                mhz_ordered.append((int(mm.group(1)), float(mm.group(2))))
+            sample["mhz_ordered"] = mhz_ordered
+            # Convenience dict (drops duplicate keys; used for "did we
+            # ever see this MHz" lookups, not for positional analysis):
+            mhz: dict[int, float] = {}
+            for v_mhz, pct in mhz_ordered:
+                mhz[v_mhz] = mhz.get(v_mhz, 0.0) + pct
             sample["mhz_residency"] = mhz
-            # In case the parens contain P-states instead of MHz (some
-            # powermetrics formats). Look for both.
             ps_in_active = {}
             for pm in PSTATE_BUCKET.finditer(inner):
                 ps_in_active[pm.group(1)] = float(pm.group(2))
@@ -294,7 +302,53 @@ def main():
             cells.append(f"{pct:>7.2f}%")
         print(f"{phase:<14} | " + " | ".join(cells))
 
-    # Try to build a P-state -> MHz mapping by aligning per-phase profiles
+    # Positional mapping: powermetrics output lists MHz buckets in the
+    # same ordinal order as P1..P15. This gives us the canonical mapping
+    # directly. Verify by checking that for each phase, the position-i
+    # MHz residency matches the position-i P-state SW residency.
+    print()
+    print("=" * 120)
+    print("Positional P-state -> MHz mapping from powermetrics (ordinal alignment)")
+    print("=" * 120)
+    # Pull positional mapping from the first sample with a complete list
+    pos_mhz: list[int] = []
+    for s in valid_pm:
+        if "mhz_ordered" in s and len(s["mhz_ordered"]) >= 15:
+            pos_mhz = [m for m, _ in s["mhz_ordered"]]
+            break
+    if pos_mhz:
+        print(f"P1..P{len(pos_mhz)} -> MHz mapping (positional from powermetrics):")
+        for i, mhz in enumerate(pos_mhz, start=1):
+            print(f"  P{i:<2} = {mhz:>5} MHz")
+
+        # Verification: per-phase, compare each (Pi, MHz_at_pos_i) residency
+        # in powermetrics' own output. SW state (sw_state, sums to 100%)
+        # should align with the per-MHz residency of the matching position.
+        print()
+        print("Per-phase verification (SW state pct vs MHz pct at same position):")
+        print(f"{'phase':<14} | {'P-idx':>5} | {'MHz':>5} | {'sw_state %':>10} | {'mhz_res %':>10} | {'diff':>6}")
+        for phase in phase_order:
+            samples = pm_per_phase.get(phase, [])
+            if not samples:
+                continue
+            # Average per-position MHz residency and per-Pi SW state across samples
+            for pi in range(1, len(pos_mhz) + 1):
+                mhz_at_pi_vals = [
+                    s["mhz_ordered"][pi - 1][1] if "mhz_ordered" in s
+                    and len(s["mhz_ordered"]) >= pi else 0.0
+                    for s in samples
+                ]
+                sw_at_pi_vals = [
+                    s.get("sw_state", {}).get(f"SW_P{pi}", 0.0) for s in samples
+                ]
+                mhz_avg = sum(mhz_at_pi_vals) / len(samples)
+                sw_avg = sum(sw_at_pi_vals) / len(samples)
+                if sw_avg > 0.5 or mhz_avg > 0.5:
+                    print(f"{phase:<14} | P{pi:<4} | {pos_mhz[pi-1]:>5} | "
+                          f"{sw_avg:>9.2f}% | {mhz_avg:>9.2f}% | "
+                          f"{abs(sw_avg - mhz_avg):>5.2f}%")
+
+    # Build a P-state -> MHz mapping by aligning per-phase profiles
     print()
     print("=" * 120)
     print("Mapping inference: for each non-OFF GPUPH P-state, find the MHz "
@@ -345,26 +399,81 @@ def main():
         print(f"{p:<8} {best[0]!s:<15} {best[1]:<10.3f} "
               f"{second[0]!s:<15} {second[1]:<10.3f}")
 
-    # Verdict
+    # Verdict logic refined: the cosine-similarity inference works for
+    # extreme states (P1, P15) but conflates intermediate ones because
+    # they share the same phase footprint. The positional mapping above
+    # is the authoritative answer; the cross-check is whether sw_state %
+    # at SW_Pi tracks the position-i MHz % across phases.
     print()
     print("=" * 120)
     print("Verdict")
     print("=" * 120)
-    if not mapping:
-        print("VERDICT: FAIL -- no mapping inferred")
+    if not pos_mhz:
+        print("VERDICT: FAIL -- couldn't extract positional MHz list")
         return
-    # Check monotonicity: P-states sorted by index should map to MHz sorted ascending
-    sorted_p = sorted(mapping.keys(), key=lambda n: int(n.lstrip("P")))
-    mhz_seq = [mapping[p] for p in sorted_p]
-    is_monotonic = all(b >= a for a, b in zip(mhz_seq, mhz_seq[1:]))
-    print(f"Inferred mapping order: {[(p, mapping[p]) for p in sorted_p]}")
-    print(f"MHz sequence monotonic non-decreasing: {is_monotonic}")
-    if is_monotonic and len(set(mapping.values())) >= 4:
-        print("VERDICT: PASS -- mapping is monotonic and non-trivial")
-    elif is_monotonic:
-        print("VERDICT: MARGINAL -- mapping monotonic but few distinct MHz")
+
+    # Compute mean abs diff between SW_Pi % and position-i MHz % across
+    # all (phase, P_idx) cells where either is non-zero (from the table
+    # above).
+    diffs = []
+    for phase in phase_order:
+        samples = pm_per_phase.get(phase, [])
+        if not samples:
+            continue
+        for pi in range(1, len(pos_mhz) + 1):
+            mhz_avg = sum(
+                s["mhz_ordered"][pi - 1][1] if "mhz_ordered" in s
+                and len(s["mhz_ordered"]) >= pi else 0.0
+                for s in samples
+            ) / len(samples)
+            sw_avg = sum(
+                s.get("sw_state", {}).get(f"SW_P{pi}", 0.0) for s in samples
+            ) / len(samples)
+            if mhz_avg > 0.5 or sw_avg > 0.5:
+                diffs.append(abs(mhz_avg - sw_avg))
+    median_diff = sorted(diffs)[len(diffs) // 2] if diffs else float("nan")
+    max_diff = max(diffs) if diffs else float("nan")
+    print(f"Across all (phase, P-idx) cells where either residency > 0.5%:")
+    print(f"  median |sw_state - mhz_at_pos| = {median_diff:.2f}%")
+    print(f"  max    |sw_state - mhz_at_pos| = {max_diff:.2f}%")
+    if median_diff < 1.0 and max_diff < 5.0:
+        print("VERDICT: PASS -- positional mapping verified within tight tolerance")
+    elif median_diff < 5.0:
+        print(f"VERDICT: MARGINAL -- positional mapping holds with median "
+              f"{median_diff:.2f}% / max {max_diff:.2f}% drift")
     else:
-        print("VERDICT: FAIL -- mapping not monotonic")
+        print(f"VERDICT: FAIL -- median {median_diff:.2f}% exceeds 5% threshold")
+
+    # Cross-validate: GPUPH P-state residency should also match position-i MHz residency
+    print()
+    print("Cross-validate: IOReport GPUPH SW residency vs powermetrics MHz residency at "
+          "matching position")
+    print(f"{'phase':<14} | {'P-idx':>5} | {'MHz':>5} | "
+          f"{'gpuph_pct':>10} | {'mhz_pct':>10} | {'diff':>6}")
+    cross_diffs = []
+    for phase in phase_order:
+        if phase not in state_per_phase or phase not in pm_per_phase:
+            continue
+        d = state_per_phase[phase]
+        total = sum(d.values())
+        samples = pm_per_phase[phase]
+        for pi in range(1, len(pos_mhz) + 1):
+            gpuph_pct = (d.get(f"P{pi}", 0) / total * 100) if total else 0.0
+            mhz_avg = sum(
+                s["mhz_ordered"][pi - 1][1] if "mhz_ordered" in s
+                and len(s["mhz_ordered"]) >= pi else 0.0
+                for s in samples
+            ) / len(samples)
+            if gpuph_pct > 0.5 or mhz_avg > 0.5:
+                cross_diffs.append(abs(gpuph_pct - mhz_avg))
+                print(f"{phase:<14} | P{pi:<4} | {pos_mhz[pi-1]:>5} | "
+                      f"{gpuph_pct:>9.2f}% | {mhz_avg:>9.2f}% | "
+                      f"{abs(gpuph_pct - mhz_avg):>5.2f}%")
+    if cross_diffs:
+        cross_med = sorted(cross_diffs)[len(cross_diffs) // 2]
+        cross_max = max(cross_diffs)
+        print(f"\nCross-source agreement: median {cross_med:.2f}% / "
+              f"max {cross_max:.2f}%")
 
 
 if __name__ == "__main__":

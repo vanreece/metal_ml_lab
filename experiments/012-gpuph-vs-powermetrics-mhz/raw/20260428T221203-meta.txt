@@ -1,0 +1,22 @@
+experiment: 012-gpuph-vs-powermetrics-mhz
+timestamp: 20260428T221203
+device: Apple M4 Max
+architecture: applegpu_g16s
+os: macOS-26.4.1-arm64-arm-64bit-Mach-O
+python: 3.14.4 (main, Apr 14 2026, 14:46:33) [Clang 22.1.3 ]
+pyobjc: 12.1
+qos: pthread_set_qos_class_self_np -> 0
+power: Now drawing from 'AC Power'
+pmraw: /Users/vanreece/dev/metal_ml_lab/experiments/012-gpuph-vs-powermetrics-mhz/raw/PMRAW.txt  initial_size=196121  final_size=400176
+energy_csv: 20260428T221203-ioreport.csv
+states_csv: 20260428T221203-ioreport-states.csv
+phases_csv: 20260428T221203-phases.csv
+telemetry_interval_ms: 250
+baseline_s: 10.0
+staircase_steps: [0.0, 0.25, 0.5, 0.75, 1.0]
+step_duration_s: 8.0
+tail_s: 10.0
+workload_kernel: fma_loop iters=65536 threads=32
+run_start_monotonic_ns: 29367828340583
+run_end_monotonic_ns:   29427839071250
+run_wall_clock_s: 60.01
