@@ -130,15 +130,16 @@ answer and a link to the experiment that closed it, then moves to
   Mechanism not isolated. A focused channel-subset sweep would
   narrow it; pre-registerable as exp 009.
 - ~~**Can we read GPU frequency / per-P-state residency from
-  IOReport?**~~ **Closed by 010 (2026-04-28): per-state residency,
-  yes. Frequency mapping, not yet.** GPUPH on M4 Max has 16 states
-  (`OFF`, `P1`-`P15`); residency time series tracks workload phases
-  monotonically (PASS verdict, staircase 4/4 monotonic transitions).
-  State names contain no MHz info. Building a state-index → MHz
-  mapping requires powermetrics cross-reference (exp 011). Free
-  bonus: 11 sibling `GPU Stats` STATE channels (BSTGPUPH, GPU_SW,
-  PWRCTRL, AFRSTATE, etc.) come along with the same bindings. See
-  `notes/answered-questions.md`.
+  IOReport?**~~ **Closed by 010 (per-state residency) + 012 (MHz
+  mapping), 2026-04-28.** GPUPH on M4 Max has 16 states (`OFF` +
+  `P1`-`P15`). The per-state MHz mapping (M4 Max specific):
+  P1=338, P2=618, P3=796, P4=924, P5=952, P6=1056, P7=1062, P8=1182,
+  P9=1182, P10=1312, P11=1242, P12=1380, P13=1326, P14=1470,
+  P15=1578. Mapping is NOT monotonic in P-index (P10>P11, P12>P13,
+  P8=P9). Cross-source agreement (IOReport GPUPH vs powermetrics
+  MHz residency): median 2.65 %. Sudo path now optional for DVFS
+  observation. **Open:** why is the index ordering non-monotonic?
+  Voltage / boost-pair / SLC substate hypotheses untested.
 - **NEW from 010:** what determines whether PWRCTRL is in `PERF`
   vs `DEADLINE` mode? `PERF` mode during staircase (heavy 65K-FMA
   kernels at variable duty cycle); `DEADLINE` mode during the 009
