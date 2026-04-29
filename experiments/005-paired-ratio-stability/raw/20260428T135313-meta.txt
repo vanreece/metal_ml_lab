@@ -1,0 +1,147 @@
+experiment: 005-paired-ratio-stability
+timestamp: 20260428T135313
+device: Apple M4 Max
+registry_id: 4294968451
+architecture: applegpu_g16s
+chip: arm  machine: arm64
+os: macOS-26.4.1-arm64-arm-64bit-Mach-O
+python: 3.14.4 (main, Apr 14 2026, 14:46:33) [Clang 22.1.3 ]
+pyobjc: 12.1
+qos: pthread_set_qos_class_self_np -> 0
+power: Now drawing from 'AC Power'
+powermetrics: sudo -n failed; powermetrics skipped
+powermetrics_started_wall_ns: 12071360539500
+caffeinate: started pid=16067
+display_powerstate_start: Driver ID  Current State  Max State  Current State Description
+Internal failure: Failed to get power state information
+display_powerstate_end:   Driver ID  Current State  Max State  Current State Description
+Internal failure: Failed to get power state information
+pmset_assertions_start: |
+  2026-04-28 13:53:13 -0700 
+  Assertion status system-wide:
+     BackgroundTask                 0
+     PreventDiskIdle                1
+     ApplePushServiceTask           0
+     UserIsActive                   1
+     PreventUserIdleDisplaySleep    1
+     SoftwareUpdateTask             0
+     PreventSystemSleep             0
+     ExternalMedia                  0
+     PreventUserIdleSystemSleep     1
+     NetworkClientActive            0
+  Listed by owning process:
+     pid 395(powerd): [0x0000231d0001966d] 00:51:21 PreventUserIdleSystemSleep named: "Powerd - Prevent sleep while display is on"  
+     pid 454(WindowServer): [0x0000231d0009966a] 00:00:00 UserIsActive named: "com.apple.iohideventsystem.queue.tickle serviceID:100000d41 service:AppleMultitouchDevice product:Apple Internal Keyboard / Trackpad eventType:11"  
+  	Timeout will fire in 600 secs Action=TimeoutActionRelease
+     pid 912(sharingd): [0x00002f2400018569] 00:00:02 PreventUserIdleSystemSleep named: "Handoff"  
+     pid 871(nsurlsessiond): [0x00002f23000b8567] 00:00:03 BackgroundTask named: "NSURLSessionTask 9A5294D6-1E6E-4DD0-8586-16ED5B6E1B23"  
+  	Timeout will fire in 10796 secs Action=TimeoutActionTurnOff
+     pid 15926(caffeinate): [0x00002e5f00018275] 00:03:19 PreventUserIdleSystemSleep named: "caffeinate command-line tool"  
+  	Details: caffeinate asserting for 300 secs
+  	Localized=THE CAFFEINATE TOOL IS PREVENTING SLEEP.
+  	Timeout will fire in 101 secs Action=TimeoutActionRelease
+     pid 16062(caffeinate): [0x00002f270001856b] 00:00:00 PreventUserIdleSystemSleep named: "caffeinate command-line tool"  
+  	Details: caffeinate asserting on behalf of 'uv' (pid 16061)
+  	Localized=THE CAFFEINATE TOOL IS PREVENTING SLEEP.
+     pid 16062(caffeinate): [0x00002f270005856c] 00:00:00 PreventUserIdleDisplaySleep named: "caffeinate command-line tool"  
+  	Details: caffeinate asserting on behalf of 'uv' (pid 16061)
+  	Localized=THE CAFFEINATE TOOL IS PREVENTING SLEEP.
+     pid 16062(caffeinate): [0x00002f27000f856d] 00:00:00 PreventDiskIdle named: "caffeinate command-line tool"  
+  	Details: caffeinate asserting on behalf of 'uv' (pid 16061)
+  	Localized=THE CAFFEINATE TOOL IS PREVENTING SLEEP.
+  Kernel Assertions: 0x100=MAGICWAKE
+     id=582  level=255 0x100=MAGICWAKE creat=  mod= description=en0 owner=IOSkywalkNetworkBSDClient
+experiment_started_wall_ns: 12071394863500
+experiment_ended_wall_ns:   12190711867916
+ref_kernel: fma_loop iters=1024 threads=32
+trials: {'T1': ('fma_loop', {'fma_iters': 512, 'threads': 32}), 'T2': ('fma_loop', {'fma_iters': 4096, 'threads': 32}), 'T3': ('write_tid', {'threads': 524288}), 'T4': ('write_tid', {'threads': 1048576})}
+threadgroup_size: 32
+n_per_combo: 300
+n_sweeps: 3
+per_combo_cooldown_s: 2.0
+between_sweep_cooldown_s: 30.0
+warmup_recipe: K=1 untimed dispatch of trial kernel before each measurement (ref not warmed up)
+sampling_point: MTLCounterSamplingPointAtStageBoundary
+paired_pattern: ONE MTLCommandBuffer with TWO sequential MTLComputeCommandEncoders, each with own pass descriptor + timestamp pair. Order: [ref, trial].
+correlation_start: cpu=12071394861208 gpu=12071394861208
+correlation_end:   cpu=12190711880958 gpu=12190711880958
+experiment_wall_clock_s: 119.32
+
+alone summary per (condition, sweep) (min | p50 | p95 | robust_cv | naive_cv):
+  T1_alone     sweep=0 min=    36250 p50=     36875 p95=     37541 robust_cv=0.0084 naive_cv=0.2623
+  T1_alone     sweep=1 min=    36208 p50=     36708 p95=     37291 robust_cv=0.0059 naive_cv=0.2933
+  T1_alone     sweep=2 min=    15709 p50=     36791 p95=     37250 robust_cv=0.0103 naive_cv=1.0305
+  T2_alone     sweep=0 min=   248333 p50=    248792 p95=    251385 robust_cv=0.0010 naive_cv=0.0187
+  T2_alone     sweep=1 min=   136000 p50=    248625 p95=    251150 robust_cv=0.0011 naive_cv=0.1295
+  T2_alone     sweep=2 min=   136042 p50=    248709 p95=    249252 robust_cv=0.0011 naive_cv=0.1259
+  T3_alone     sweep=0 min=    58917 p50=     59458 p95=     61086 robust_cv=0.0042 naive_cv=0.1903
+  T3_alone     sweep=1 min=    58875 p50=     59417 p95=     60269 robust_cv=0.0042 naive_cv=0.3849
+  T3_alone     sweep=2 min=    22583 p50=     59417 p95=     60125 robust_cv=0.3235 naive_cv=0.2864
+  T4_alone     sweep=0 min=   111708 p50=    112583 p95=    116732 robust_cv=0.0031 naive_cv=0.2293
+  T4_alone     sweep=1 min=   111791 p50=    112625 p95=    116604 robust_cv=0.0042 naive_cv=0.1924
+  T4_alone     sweep=2 min=   111709 p50=    112480 p95=    113625 robust_cv=0.0045 naive_cv=0.0392
+  ref_alone    sweep=0 min=    66541 p50=     66959 p95=     76158 robust_cv=0.0037 naive_cv=0.1715
+  ref_alone    sweep=1 min=    66583 p50=     66958 p95=     68598 robust_cv=0.0033 naive_cv=0.1060
+  ref_alone    sweep=2 min=    36708 p50=     66959 p95=     67791 robust_cv=0.0041 naive_cv=0.1204
+
+paired summary per (condition, sweep): ref / trial / ratio / gap
+  T1_paired    sweep=0
+    ref:    p50=     67125 robust_cv=0.0078
+    trial:  p50=     37125 robust_cv=0.0360
+    ratio:  p50=  0.5518 robust_cv=0.0317
+    gap_ns: p50=    1041 p95=    1833 max=4125
+  T1_paired    sweep=1
+    ref:    p50=     66916 robust_cv=0.0037
+    trial:  p50=     36792 robust_cv=0.0195
+    ratio:  p50=  0.5497 robust_cv=0.0147
+    gap_ns: p50=     834 p95=    1167 max=5792
+  T1_paired    sweep=2
+    ref:    p50=     67042 robust_cv=0.0041
+    trial:  p50=     36834 robust_cv=0.0109
+    ratio:  p50=  0.5493 robust_cv=0.0092
+    gap_ns: p50=     917 p95=    1583 max=3375
+  T2_paired    sweep=0
+    ref:    p50=     66708 robust_cv=0.4692
+    trial:  p50=    248666 robust_cv=0.4700
+    ratio:  p50=  3.7112 robust_cv=0.0071
+    gap_ns: p50=     792 p95=    1042 max=4417
+  T2_paired    sweep=1
+    ref:    p50=     66834 robust_cv=0.0037
+    trial:  p50=    248875 robust_cv=0.0029
+    ratio:  p50=  3.7213 robust_cv=0.0044
+    gap_ns: p50=     834 p95=    1085 max=5250
+  T2_paired    sweep=2
+    ref:    p50=     66916 robust_cv=0.0032
+    trial:  p50=    248875 robust_cv=0.0017
+    ratio:  p50=  3.7196 robust_cv=0.0038
+    gap_ns: p50=     875 p95=    1166 max=3958
+  T3_paired    sweep=0
+    ref:    p50=     66917 robust_cv=0.0028
+    trial:  p50=     59833 robust_cv=0.0062
+    ratio:  p50=  0.8937 robust_cv=0.0063
+    gap_ns: p50=     833 p95=    1083 max=1750
+  T3_paired    sweep=1
+    ref:    p50=     66958 robust_cv=0.0037
+    trial:  p50=     59833 robust_cv=0.0077
+    ratio:  p50=  0.8932 robust_cv=0.0069
+    gap_ns: p50=     833 p95=    1167 max=5667
+  T3_paired    sweep=2
+    ref:    p50=     67083 robust_cv=0.0041
+    trial:  p50=     60188 robust_cv=0.0144
+    ratio:  p50=  0.8969 robust_cv=0.0129
+    gap_ns: p50=    1083 p95=    1840 max=5875
+  T4_paired    sweep=0
+    ref:    p50=     66958 robust_cv=0.0043
+    trial:  p50=    113042 robust_cv=0.0071
+    ratio:  p50=  1.6881 robust_cv=0.0082
+    gap_ns: p50=     875 p95=    1462 max=4500
+  T4_paired    sweep=1
+    ref:    p50=     15771 robust_cv=0.2155
+    trial:  p50=     40084 robust_cv=0.0301
+    ratio:  p50=  2.5364 robust_cv=0.1565
+    gap_ns: p50=     500 p95=     833 max=1250
+  T4_paired    sweep=2
+    ref:    p50=     66938 robust_cv=0.0037
+    trial:  p50=    113125 robust_cv=0.0055
+    ratio:  p50=  1.6901 robust_cv=0.0066
+    gap_ns: p50=     875 p95=    1125 max=3833

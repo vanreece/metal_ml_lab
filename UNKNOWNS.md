@@ -61,15 +61,18 @@ answer and a link to the experiment that closed it, then moves to
   duration band (~0.4-1.6 ms dispatches), but are stable everywhere
   else. Plausibly related to 002's "1-10 ms transition zone" of the
   GPU power state machine, but we have not measured directly.
-- **NEW from 005: Does paired-encoder ratio timing remain stable
-  across separate script invocations?** Within-session ratio
-  stability is established (≤1% drift across 3 sweeps, per 005).
-  Cross-session stability (different process, different time of
-  day, different thermal state) is the strongest remaining
-  justification for pair timing as a primary methodology and is
-  untested. A 006 experiment running the same paired conditions
-  twice with a 1-hour gap would close this. Decision 004's
-  cross-session validity is contingent on it.
+- ~~**NEW from 005: Does paired-encoder ratio timing remain stable
+  across separate script invocations?**~~ **Closed by 006 (2026-04-28)
+  on M4 Max: YES for trials ≥ 10× the dispatch-overhead floor.**
+  Across two M4 Max sessions 30 min apart, T2/T3/T4 ratios all
+  agreed to ≤ 0.6 % spread (PASS). T1 (the smallest trial, ~6× the
+  floor) was MARGINAL at 2.77 %. Headline finding: T2's *alone* cv
+  differed by 335× between sessions while the ratio cv was
+  essentially identical — exactly the variance-cancellation
+  mechanism decision 003 originally claimed. Decision 005
+  supersedes decision 004 on M4 Max as a result. **Still open:**
+  longer idle gaps (4 hours / overnight); cross-thermal-state;
+  M1 Pro cross-session test (untested).
 - ~~**NEW from 005: What sets the ~42 µs inter-encoder gap inside a
   single MTLCommandBuffer, and can it be reduced?**~~ **Partial
   answer (2026-04-28):** the gap is **chip-specific** — on M4 Max
@@ -98,6 +101,11 @@ answer and a link to the experiment that closed it, then moves to
 - Does reading GPU frequency from `powermetrics` during a measurement
   window correlate with timing variance well enough to use as a
   sample-rejection signal?
+  **Status (2026-04-28):** powermetrics is now available, but
+  `notes/ioreport.py` (sudo-free) gives us the same GPU power signal
+  with bonus per-component breakdowns (CPU, DRAM, AMCC, DCS, AFR,
+  DISP). Either signal could underpin a sample-rejection rule.
+  Untested as a rejection criterion.
 - How well do our microbenched peak FLOPS and memory bandwidth match
   Philip Turner's published numbers on M1 Pro? (Close = our measurement
   is sound. Far = something is off and downstream work is suspect.)
@@ -106,6 +114,33 @@ answer and a link to the experiment that closed it, then moves to
   between bottleneck classes well enough to be useful?
 - For which bottleneck classes can they discriminate, and for which can
   they not?
+
+## Telemetry stack (new section, 2026-04-28)
+
+- **Does IOReport's `GPU Active Time Histogram` channel give a
+  usable utilization signal?** Exp 007 falsified ioreg's
+  utilization fields (driver-side update too sparse). The IOReport
+  histogram channel uses the consumer-side delta API and may not
+  have the same problem. Untested. Same comparison shape as 008
+  (vs powermetrics active residency); pre-registerable as exp 010.
+- **What causes the +14 % bias of IOReport GPU power vs
+  powermetrics at full saturation?** Exp 008 found IOReport reads
+  consistently +14 % higher than powermetrics during step_100pct
+  on a known fma_loop workload. Direction inverts at tail (-20 %).
+  Mechanism not isolated. A focused channel-subset sweep would
+  narrow it; pre-registerable as exp 009.
+- **Can we read GPU frequency / per-P-state residency from
+  IOReport?** The `GPU Stats / GPU Performance States` group
+  exposes `GPUPH` (STATE format) — needs IOReportStateGetCount /
+  IOReportStateGetResidency bindings (we have only SimpleGet so
+  far). Useful for "what frequency was the GPU at during this
+  measurement" — would address the longstanding "DVFS state is
+  unobservable" gap.
+- **Is there a sudo-free temp / fan-RPM source?** Exp 008's
+  IOReport CSV has zero-valued temperature columns because the
+  channel-name heuristic doesn't match. The agent-research
+  recommended IOHID via a separate API; would need a Swift bridge
+  or PyObjC ride-along since libIOHID's API isn't ctypes-friendly.
 
 ## Generalization (only matter if methodology works)
 
@@ -121,29 +156,47 @@ answer and a link to the experiment that closed it, then moves to
   25 µs vs 926 µs, 37× reduction; needs reproduction). Sub-questions
   still open below.
 
-  **Still open on M4 Max specifically:**
-  - 002's cv-vs-cadence map and the 1-10 ms "nightmare zone" — does
-    the same bimodality / power-state-machine structure exist on
-    G16, and where? The smaller spaced/btb DVFS gap on M4 Max (1.43×
-    vs 1.82×) hints that the cadence sensitivity may be flatter.
-  - 003's K=1 warmup recipe — appropriate when the floor itself
-    moved? Re-run 003-style warmup-K sweep on M4 Max likely needed.
-  - 004's work-dominance thresholds — these almost certainly shift,
-    since M4 Max has materially higher peak FLOPS and bandwidth than
-    M1 Pro. The 32K-thread "overhead-dominated" zone and the
-    131K-262K "work-dominated" knee are M1-Pro-specific until shown
-    otherwise on G16.
-  - 004's +21 µs step at fma_loop iters 192→256 — plausibly
-    G13-specific (compiler / register-pressure threshold). May or
-    may not exist on G16, may exist at a different iter count. Worth
-    a focused re-run.
-  - 004's bimodal between-sweep variance band at fma_iters
-    8192-16384 — same comment.
-  - 005's ~42 µs inter-encoder gap — could be different on G16; the
-    front-end behavior on M4 Max appears different at the tail-
-    behavior level (above), which suggests this gap may shift too.
-  - Whether the M4 Max's apparent tighter tails reproduce across
-    multiple runs and across the macOS train.
+  **M4 Max status as of 2026-04-28 (end of day):**
+  All five M1 Pro experiments have been re-run on M4 Max. The
+  baseline numbers and several qualitative findings differ:
+  - **001:** dispatch-overhead floor 8.0 µs → 6.4 µs (~20 % drop).
+    Tail behavior dramatically tighter (max 25 µs vs 926 µs).
+    Counter set / sampling point / 24 MHz tick all unchanged.
+  - **002:** the M1 Pro "1ms nightmare zone" is GONE. sleep_1ms is
+    the *cleanest* M4 Max cadence (cv = 0.07 vs M1 Pro 7.03). cv
+    ordering across cadences nearly inverted; M1 Pro recipes do
+    not transfer.
+  - **003:** warmup-kind ranking inverted. `same K=1` (M1 Pro's
+    safest) is M4 Max's destabilizer; `fma_loop K=1` (M1 Pro's
+    destabilizer) is M4 Max-safe. New default: `heavy_write K=1`.
+    A sub-floor ~2 µs settled state was observed in `fma_loop
+    K=20 sleep_0` (mins to 2.083 µs) — single-combo finding,
+    reproducibility untested.
+  - **004:** work-dominance threshold for `write_tid` shifted from
+    131K-262K (M1 Pro) to 262K-524K threads (M4 Max) — needs ~2×
+    more threads to escape overhead. The +21 µs `fma_loop` step at
+    iters 192→256 EXISTS on M4 Max as +13 µs at the same boundary
+    — confirms it's a Metal-compiler/microarch threshold, not a
+    chip-specific quirk. Bimodal band shifted to 4K-16K iters
+    (M1 Pro: 8K-16K).
+  - **005:** **inter-encoder gap collapsed from 42 µs to 833 ns
+    (50× reduction).** Variance reduction now WORKS on M4 Max for
+    noisy trials (T2 alone cv 0.336 → ratio cv 0.005, 63×
+    improvement). Validated decision 003's original claim. Tail
+    suppression (M1 Pro 005's positive surprise) does NOT broadly
+    reproduce on M4 Max (only T4 saw meaningful tail reduction).
+
+  **Open M4 Max methodology questions as of 2026-04-28:**
+  - The +13 µs M4 Max step at fma_loop 192→256 — same Metal
+    compiler threshold as M1 Pro's +21 µs step? AIR / GPU assembly
+    inspection would distinguish. Architectural curiosity, not
+    blocking methodology.
+  - The ~2 µs sub-floor state from 003 M4 Max — reproducible? A
+    003a-style focused re-run (fma_loop K=20 sleep_0 × 5
+    attempts) would test it.
+  - Cross-thermal-state ratio stability (M4 Max). 006 covered
+    30-min idle gap; longer / hotter conditions untested.
+
 - Does the methodology transfer to non-MLX kernels (raw `mx.fast.metal_kernel`
   vs PyTorch MPS vs llama.cpp shaders)?
 
