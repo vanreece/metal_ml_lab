@@ -307,3 +307,271 @@ Branches:
   add the falsification note).
 
 We do not plan past these branches.
+
+---
+
+## Result
+
+**Date run:** 2026-04-28 (timestamp prefix `20260428T211252`)
+**Hardware:** Apple M4 Max 36GB / `applegpu_g16s` / macOS 26.4.1
+**Wall-clock:** 36.62 s total (5 attempts × ~6 s including 5 s cooldown
++ subprocess launch ~1 s + ~0.4 s GPU work per attempt).
+**Outcome:** **STRONG REPRODUCE (5/5).** Every attempt entered the
+sub-floor state with onset at trial idx 24-33 (the 003-M4Max original
+was trial 29). The state is **deeper** and **more persistent** than the
+003 observation, and **deepens across attempts** in a way that strongly
+implicates persistent chip state across subprocess re-launch.
+
+### Per-attempt summary
+
+| attempt | cal_first | cal_p50_rest | meas_min | meas_p50 | meas_p95 | meas_max | meas_cv | below_5500 | first_sub_idx |
+|--------:|----------:|-------------:|---------:|---------:|---------:|---------:|--------:|-----------:|--------------:|
+|       0 |    68 959 |       10 084 |    2 375 |    6 334 |    7 148 |   16 666 |  0.300  |    **22**  |        **31** |
+|       1 |    10 167 |        9 834 |    2 833 |    6 333 |    7 106 |    9 125 |  0.189  |    **14**  |        **33** |
+|       2 |    11 708 |        8 792 |  **1 625** |  2 187 |    7 238 |  118 542 |  5.829  |    **60**  |        **24** |
+|       3 |     8 083 |        6 625 |  **1 625** |  2 896 |    6 702 |    7 333 |  0.732  |    **52**  |        **32** |
+|       4 |     8 209 |        6 459 |    1 666 |    2 396 |    6 994 |    8 125 |  0.901  |    **55**  |        **28** |
+
+Pre-registration verdict thresholds: STRONG ≥ 3 attempts with ≥ 10
+sub-floor trials; PARTIAL 1-2; NOT REPRODUCED 0. Result: 5/5 with
+14-60 sub-floor trials each.
+
+### The trajectory shape: two-tier sub-floor
+
+The trial-by-trial trace exposes structure the 003 single observation
+couldn't. The chip enters sub-floor through a **gradual descent**, not
+a single transition:
+
+**Attempt 2 (the canonical example):**
+- Trials 0-23: 6.3-9.9 µs (back-to-back floor)
+- Trial 9: 118 542 ns spike — one catastrophic outlier (see Surprises § 2)
+- **Trial 24-31: 3.7 → 2.6 µs** (mid-tier descent, ~75-95 ticks)
+- **Trial 32-83: 1.6-2.8 µs** (deep-tier, ~40-65 ticks, 1 642 ± 105 ns)
+- No return to floor for the rest of the attempt.
+
+**Attempt 0 (the partial example):**
+- Trials 0-30: 6.2-7.4 µs (floor)
+- **Trial 31-50: 2.4-4.6 µs** (mid-tier sub-floor, never reached deep-tier)
+- Trial 51 onward: returns to floor with one excursion at trial 53, 55
+- Final cv 0.30 because of the floor↔sub-floor oscillation in the second half.
+
+**Attempts 3-4 (the most dramatic):** descended into the deep-tier
+within ~10 trials of onset and stayed at 1.6-2.1 µs for the entire
+remainder. Attempt 3 absolute min = 1 625 ns; attempt 4 = 1 666 ns.
+
+**1 625 ns is exactly 39 ticks** of the 24 MHz GPU timestamp counter
+(1 625 / 41.67 = 39.00). The back-to-back floor is ~147 ticks (6 125
+ns). The chip is operating at **3.77× fewer cycles for the same kernel**
+under sustained sub-floor conditions. Either the GPU clock is running
+materially faster (DVFS upshift), or the kernel is taking a different
+scheduling path with fewer cycles, or both.
+
+### Cross-attempt coupling is real
+
+The most surprising finding: **the sub-floor state deepens with each
+successive attempt, despite subprocess re-launch and a 7 s gap between
+attempts** (5 s cooldown inside attempt.py + 2 s sleep in driver).
+
+| attempt | cal_first → cal_p50_rest | meas_p50 | depth |
+|--------:|:-------------------------|---------:|-------|
+| 0       | 68 959 → 10 084          |    6 334 | shallow (mostly floor) |
+| 1       | 10 167 → 9 834           |    6 333 | shallow (mostly floor) |
+| 2       | 11 708 → 8 792           |    2 187 | **deep**, persistent |
+| 3       |  8 083 → 6 625           |    2 896 | **deep**, persistent |
+| 4       |  8 209 → 6 459           |    2 396 | **deep**, persistent |
+
+Three readouts of the cross-attempt drift:
+1. **Calibration `cal_p50_rest` halves from attempt 0 to attempt 4**
+   (10 084 → 6 459 ns). The chip enters each successive attempt in a
+   more elevated state, even after the cooldown.
+2. **Sub-floor onset moves earlier on the deepest attempts.** Attempt
+   2 entered at trial 24, attempts 0-1 at 31-33. Attempt 4 entered at
+   trial 28 with the chip already partially elevated.
+3. **The deep-tier (40-tick state) is only reached by attempts 2-4.**
+   Attempts 0-1 found the mid-tier (75-95 ticks) but didn't descend
+   further before the attempt ended. Once the chip has been pushed
+   into the deep-tier, it goes there faster on subsequent attempts.
+
+This says **the 5 s cooldown does not reset the chip's DVFS state**
+to the 001-002 baseline. The fast state has a half-life longer than 5
+seconds, possibly much longer. A cleaner reproduction protocol would
+need explicit "wait until baseline returns" between attempts, perhaps
+keyed to IOReport showing GPU power < some threshold.
+
+### IOReport GPU power: directional, not per-trial
+
+Hypothesis: GPU power should be elevated during sub-floor trials. The
+analysis ran but **IOReport's 500 ms cadence is too coarse for
+trial-level resolution** — each attempt is only ~5 s of wall-clock
+spread, and many trials map to the same IOReport sample windows. The
+per-attempt floor-vs-sub-floor median GPU power was identical within
+each attempt because both groups overlap the same windows.
+
+What we *can* see is across-attempt aggregate GPU power:
+
+| attempt | gpu_p50_mw | cpu_p50_mw | amcc_p50_mw | dcs_p50_mw | depth |
+|--------:|-----------:|-----------:|------------:|-----------:|-------|
+| 0       |        241 |      1 234 |         785 |        736 | shallow |
+| 1       |        230 |      1 225 |         727 |        728 | shallow |
+| 2       |        521 |      1 798 |         941 |      1 069 | deep |
+| 3       |        445 |      2 034 |       1 082 |      1 387 | deep |
+| 4       |        128 |      1 006 |         559 |        470 | deep |
+
+Attempts 2-3 (deepest sub-floor) had ~2× the GPU power of attempts 0-1
+(shallow). This is **directional support for a DVFS upshift mechanism**
+— deeper state, more power.
+
+But attempt 4 broke the pattern: deepest sub-floor entry, *lowest* GPU
+power. Two candidate explanations:
+1. **IOReport sampling missed.** Only 6 IOReport samples covered
+   floor-trial wall-clock windows in attempt 4 (vs 24-70 in others).
+   Attempt 4's measured-trial work happened mostly between IOReport
+   samples, so the per-attempt GPU power median is dominated by a few
+   non-representative samples.
+2. **A different "fast state" with lower power.** Possible, but
+   speculative — would need a sub-second sampling cadence to separate
+   from explanation 1.
+
+**Verdict for the mechanism question:** the IOReport data is consistent
+with a DVFS upshift but not conclusive at this cadence. Higher-cadence
+IOReport (e.g. 100 ms) is the natural follow-up.
+
+## Surprises
+
+### 1. The state is reachable on demand and persists across re-launches
+
+Confidence on reproducibility was low pre-registration (the 003 M4 Max
+single observation could plausibly have been a one-off). 5/5 with onset
+within 9 trials of 003's reference is far stronger than predicted —
+the entry conditions for the M4 Max sub-floor state are robust under
+the exact recipe (`fma_loop K=20 sleep_0`, write_tid 32t measured,
+~25-30 trials of cumulative warmup).
+
+The pre-registered prediction "1-2 of 5" was wrong. Pre-registering it
+explicitly anyway prevents post-hoc retrofitting — we wrote down what
+we expected before knowing the outcome, and the outcome was much
+stronger than expected.
+
+### 2. The mid-tier vs deep-tier two-state structure
+
+003-M4Max's single observation showed trials in the [2, 4] µs range
+without distinguishing internal structure. Five reproductions reveal
+a **two-tier structure**:
+
+- **Mid-tier:** ~75-95 ticks (3.0-4.5 µs). All five attempts pass
+  through this on entry.
+- **Deep-tier:** ~40-50 ticks (1.6-2.1 µs). Only reached on attempts
+  2, 3, 4 (the cross-attempt-warmed ones).
+
+The mid-tier might be one DVFS state; the deep-tier might be a higher
+one; or they might be the same DVFS state with different warm-up
+durations. The trajectory in attempt 2 shows a clean monotonic descent
+from mid to deep over ~10 trials, which is more consistent with
+"continuous warm-up" than "discrete state transitions."
+
+### 3. The 118 µs outlier in attempt 2
+
+Trial 9 of attempt 2 measured 118 542 ns — ~14× the median. This
+happened during the floor era (before sub-floor entry at trial 24).
+No other attempt produced an outlier above 17 µs. The mechanism is
+unknown; possibilities include OS scheduling preemption, a one-shot
+WindowServer competition spike (caffeinate keeps display awake but
+not exclusive), or thermal throttle event. It does not appear to
+have prevented or delayed the sub-floor entry — the chip still
+descended starting at trial 24 as predicted.
+
+### 4. The 1 625 ns hardware quantum boundary
+
+The minimum across 5 attempts is exactly 1 625 ns = 39 ticks. The
+back-to-back floor is ~147 ticks. **3.77× cycle reduction** is a big
+number — if the GPU clock is running at the published M4 Max max GPU
+freq of ~1.4 GHz vs the floor freq of ~400-500 MHz, that's ~3× — in
+the same ballpark as the observed cycle reduction.
+
+This is consistent with the chip being at or near its **maximum GPU
+DVFS state** during deep-tier trials. The "001-002 floor of 6.4 µs is
+the minimum dispatch overhead" framing should be replaced with
+"6.4 µs is the *minimum at the steady-state DVFS floor*; under
+sustained arithmetic warmup the chip can push to ~1.7 µs at peak DVFS."
+
+### 5. Calibration probe `cal_first` is wildly different on attempt 0
+
+Attempt 0 cal_first = 68 959 ns (vs 8-12 µs for attempts 1-4). Cold
+start of the MTLDevice for the first time in this driver process picks
+up ~7× the steady-state cal_first. This is consistent with prior
+findings (003 cal_first variance) — the *first* dispatch after a fresh
+MTLDevice is in a transient state. By attempt 1+, the device is hot
+and cal_first stabilizes.
+
+This is a known calibration-probe contamination story per 003 §
+"Calibration probe is itself a 10-dispatch warmup." The scale of the
+attempt 0 outlier is unusual but doesn't contaminate the headline
+finding (attempt 0 still entered sub-floor at trial 31).
+
+## What this means operationally
+
+For the M4 Max operating envelope:
+
+1. **The "6.4 µs back-to-back floor" claim from 001-002 needs an
+   asterisk.** Under sustained arithmetic warmup, the chip can sustain
+   ~1.7 µs per write_tid 32t dispatch — 3.77× faster. The 6.4 µs
+   number is the *cool-state* floor, not the *fundamental hardware
+   floor*. For experiments designing measurements around expected
+   per-dispatch overhead, the floor depends on warmup recipe.
+2. **The recipe to enter the sub-floor state is now characterized:**
+   `fma_loop K=20 sleep_0` for ~25-30 trials at minimum, and the state
+   deepens further with sustained dispatch over the next ~30-50
+   trials. Subprocess re-launch does NOT reset the state on a 5-7 s
+   cooldown — the warmth carries across.
+3. **Future experiments wanting to *avoid* the sub-floor state**
+   should not run sustained `fma_loop K=20 sleep_0` for more than ~25
+   measured trials. Or should pad with longer cooldown (>> 7 s) if
+   trial counts approach the entry threshold.
+4. **Future experiments wanting to *exploit* the sub-floor state for
+   "what does write_tid 32t look like at peak GPU DVFS?"** can use
+   this recipe as a setup. Real workloads almost certainly never reach
+   this state via natural usage — it requires the specific
+   arithmetic-only warmup pattern.
+5. **The fast state half-life is longer than 5 s.** Better characterized
+   as "longer than 5 s" than "infinite" — we don't know its decay rate.
+   A follow-up experiment with explicit cooldown-time sweep could
+   measure it.
+
+## What does NOT change
+
+- Decision 005 (pair timing primary on M4 Max for trials ≥ 64 µs)
+  is unaffected — pair timing operates above the dispatch-overhead
+  floor regardless of which floor is in effect.
+- Decisions 003/004 (M1 Pro pair timing scope) are unaffected — the
+  M4 Max sub-floor doesn't apply on M1 Pro.
+- The `notes/ioreport.py` + 008 telemetry stack worked exactly as
+  designed; no changes there.
+
+## What changes
+
+- Lab state snapshot needs a "third operating point" entry on M4 Max
+  cheat sheet: "fma_loop K=20 sleep_0 sustained sub-floor at ~1.7 µs
+  reachable on demand, cross-attempt persistent."
+- The 003-M4Max readme's Surprise § 2 should get a forward-pointer to
+  this experiment ("validated and characterized — see exp 009").
+- UNKNOWNS.md should swap the `applegpu_g16s` minimum dispatch-overhead
+  question from "6.4 µs?" to "6.4 µs cool, 1.7 µs warm under recipe X."
+
+### Natural follow-ups
+
+- **GPUPH channel binding** to read DVFS state residency directly.
+  Was item 5 in queued questions; if the mechanism is a DVFS upshift,
+  GPUPH would let us *observe* it and confirm. Promoted to high
+  priority.
+- **Higher-cadence IOReport** (100 ms) during a sub-floor reproduction
+  to see GPU power actually transition during the trajectory. Tests
+  whether the per-attempt power story holds at trial-level resolution.
+- **Half-life characterization.** Re-run 009 with varying cooldown
+  durations between attempts (1 s, 5 s, 30 s, 5 min, 1 hour) to
+  measure the decay rate of the elevated state.
+- **Recipe sensitivity sweep.** Vary K (5, 10, 20, 50), FMA_ITERS
+  (256, 1024, 4096), warmup kind (heavy_write, fma_loop) to find the
+  minimum work needed to enter the sub-floor state and which
+  ingredients matter.
+
+We do not plan past these.

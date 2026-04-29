@@ -1,0 +1,31 @@
+experiment: 009-sub-floor-reproduction
+timestamp: 20260428T211252
+os: macOS-26.4.1-arm64-arm-64bit-Mach-O
+python: 3.14.4 (main, Apr 14 2026, 14:46:33) [Clang 22.1.3 ]
+pyobjc: 12.1
+power: Now drawing from 'AC Power'
+display_powerstate_end: Driver ID  Current State  Max State  Current State Description
+Internal failure: Failed to get power state information
+caffeinate: started pid=28247
+ioreport_pid: 28248  rc=0
+ioreport_csv: 20260428T211252-ioreport.csv
+attempts_csv: 20260428T211252-attempts.csv
+attempt_rcs: [0, 0, 0, 0, 0]
+n_attempts: 5
+inter_attempt_sleep_s: 2.0
+ioreport_interval_ms: 500
+recipe: write_tid 32t measured, fma_loop K=20 sleep_0 warmup, FMA_ITERS=1024
+per_attempt_n_trials: 84  per_attempt_calibration: 10  per_attempt_cooldown_s: 5.0
+run_start_monotonic_ns: 26383869595708
+run_end_monotonic_ns:   26420488000958
+run_wall_clock_s: 36.62
+
+per-attempt summary (gpu_delta_raw in ns):
+attempt | cal_first | cal_p50_rest | meas_min | meas_p50 | meas_p95 | meas_max | meas_cv | below_5500 | first_sub_idx
+      0 |     68959 |        10084 |     2375 |     6334 |     7148 |    16666 |  0.3003 |         22 |            31
+      1 |     10167 |         9834 |     2833 |     6333 |     7106 |     9125 |  0.1894 |         14 |            33
+      2 |     11708 |         8792 |     1625 |     2187 |     7238 |   118542 |  5.8285 |         60 |            24
+      3 |      8083 |         6625 |     1625 |     2896 |     6702 |     7333 |  0.7318 |         52 |            32
+      4 |      8209 |         6459 |     1666 |     2396 |     6994 |     8125 |  0.9007 |         55 |            28
+
+verdict: STRONG REPRODUCE (5/5)
