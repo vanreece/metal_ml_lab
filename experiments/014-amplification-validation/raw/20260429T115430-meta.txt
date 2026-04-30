@@ -1,0 +1,24 @@
+experiment: 014-amplification-validation
+timestamp: 20260429T115430
+device: Apple M4 Max
+architecture: applegpu_g16s
+os: macOS-26.4.1-arm64-arm-64bit-Mach-O
+python: 3.14.4 (main, Apr 14 2026, 14:46:33) [Clang 22.1.3 ]
+pyobjc: 12.1
+qos: pthread_set_qos_class_self_np -> 0
+power: Now drawing from 'AC Power'
+trials_csv: 20260429T115430-trials.csv
+cells_csv: 20260429T115430-cells.csv
+energy_csv: 20260429T115430.csv
+states_csv: 20260429T115430-states.csv
+telemetry_interval_ms: 250
+baseline_s: 2.0
+tail_s: 2.0
+n_levels: [1, 2, 4, 8, 16, 64, 256, 1024]
+methods: ['internal-loop', 'back-to-back']
+trials_per_cell: 50
+threads: 32  group: 32
+fma_per_iter: 64  (compile-time constant in kernel)
+run_start_monotonic_ns: 44805768295541
+run_end_monotonic_ns:   44810249787500
+run_wall_clock_s: 4.48

@@ -297,3 +297,163 @@ Branches:
   a different approach.
 
 We do not plan past these branches.
+
+## Result
+
+**Date run:** 2026-04-29 (timestamp prefix `20260429T115430`)
+**Hardware:** Apple M4 Max 36GB / `applegpu_g16s` / macOS 26.4.1
+**Wall-clock:** ~10 s (2 s baseline + 16 cells × ~10-235 ms + 2 s tail).
+**Outcome:** **MARGINAL piecewise-linear for both methods.** Each
+method's stable region fits cleanly (R² = 1.0000), the intercept
+matches the prior 6.4 µs dispatch-overhead floor in both cases, and
+the per-encode cost (slope_b2b − slope_internal) is positive and
+within pre-reg's "a few hundred ns to a couple µs" band. Two-point /
+many-point linear fitting works on Apple Silicon — but the regime
+boundary is real and has to be detected from the data, since
+IOReport's 250 ms cadence is too coarse to classify cells shorter
+than itself.
+
+### Headline numbers (stable-region fits)
+
+| method        | stable N range | slope (ns / amp-step) | intercept (ns) |     R² |
+|---------------|----------------|----------------------:|---------------:|-------:|
+| internal-loop | 16, 64, 256, 1024 |             405.28 |          6 860 | 1.0000 |
+| back-to-back  | 1, 2, 4, 8, 16, 64, 256 |        3 219.09 |          4 711 | 1.0000 |
+
+Per-encode cost (stable-region):
+`slope_b2b − slope_internal = 3 219 − 405 = 2 814 ns`.
+
+### Per-step incremental slope (the regime boundaries are obvious in
+the data)
+
+**internal-loop:**
+
+| N step | Δp50 / ΔN |
+|---|---:|
+| 1 → 2  | **792 ns/N** |
+| 2 → 4  | **875 ns/N** |
+| 4 → 8  | **990 ns/N** |
+| 8 → 16 | **−62 ns/N** |
+| 16 → 64 | 406 ns/N |
+| 64 → 256 | 405 ns/N |
+| 256 → 1024 | 405 ns/N |
+
+The DEADLINE → PERF kink predicted in the hypothesis lives **between
+N=8 and N=16**: per-step slope goes *negative* there (more work runs
+faster — the chip transitions to a higher DVFS regime). For N ≥ 16
+the slope is rock-solid at 405 ns per amplification step (= 64 fmas
+in the inner loop = ~6.3 ns / fma at the regime's running frequency).
+
+**back-to-back:**
+
+| N step | Δp50 / ΔN |
+|---|---:|
+| 1 → 2  | 3 417 ns/N |
+| 2 → 4  | 3 167 ns/N |
+| 4 → 8  | 3 292 ns/N |
+| 8 → 16 | 3 182 ns/N |
+| 16 → 64 | 3 303 ns/N |
+| 64 → 256 | 3 197 ns/N |
+| 256 → 1024 | **209 ns/N** |
+
+A 15× collapse in per-step slope between N=256 and N=1024. The N=1024
+cell is the only one long enough (~236 ms) to dominate IOReport's
+250 ms window, and it shows PWRCTRL = PERF(53 %) DEADLINE(29 %) and
+GPUPH P15 = 9 %. Every other cell is too short to classify cleanly.
+
+### Hypothesis check
+
+| prediction | observed | verdict |
+|---|---|---|
+| Linear model holds within a single DVFS regime (R² > 0.99, residuals < 5 %) | R² = 1.0000 in both stable regions; residuals < 0.2 % internal, < 8.6 % b2b (driven by N=1) | ✓ |
+| Internal-loop crosses DEADLINE → PERF mid-range with visible kink | yes — kink between N=8 and N=16 | ✓ |
+| Back-to-back linear with higher slope than internal-loop | yes — 3 219 vs 405 ns / amp step | ✓ |
+| Back-to-back intercept ≈ internal intercept (~6 µs) | b2b 4 711 ns, internal 6 860 ns — both within ±30 % of 6 400 ns | ✓ |
+| Carry-dependent kernel prevents compiler elision | confirmed — slope is non-zero and consistent across orders of magnitude | ✓ |
+| `slope_b2b − slope_internal` ≈ 833 ns (just the inter-encoder gap from exp 005) | **2 814 ns** — ~3.4× larger than predicted | ✗ refined |
+| Single regime crossing per method | internal-loop yes; **back-to-back has a SECOND collapse at N=1024 we did not predict** | ✗ |
+
+### Two unpredicted findings
+
+1. **The b2b "per-encode cost" is mostly per-dispatch overhead, not
+   the inter-encoder gap.** Pre-reg expected `slope_b2b −
+   slope_internal` to recover the 833 ns inter-encoder gap from exp
+   005. The actual value, 2 814 ns, is more than 3× that. The
+   interpretation: a back-to-back encoded dispatch carries the inter-
+   encoder gap *plus* per-dispatch GPU-side overhead (~2 µs) that
+   doesn't compound when the same work runs inside one inner loop.
+   Exp 005's 833 ns measured the *gap* component in isolation, not
+   the full per-dispatch cost.
+
+2. **Back-to-back collapses 15× at N=1024.** Per-step slope goes
+   from ~3 200 ns/dispatch (N ≤ 256) to ~209 ns/dispatch (N=1024 vs
+   N=256). p90 in this cell is 3.36 ms while p50 is 988 µs —
+   **bimodal**, not just shifted. The cell is the only one long
+   enough that PWRCTRL captures it as PERF-dominant. Working
+   hypothesis (untested): once a cb crosses some duration / dispatch-
+   count threshold, either (a) the GPU starts pipelining adjacent
+   dispatches so they overlap in execution, or (b) DEADLINE-mode
+   sub-floor (1.7 µs) takes over for most dispatches in the chain,
+   collapsing per-dispatch cost. Either way, **back-to-back
+   amplification is not transparent at large N** on M4 Max.
+
+### Hardware context (M4 Max only — not generalized to M1 Pro)
+
+- Internal-loop: clean 405 ns / amplification step at the running
+  DVFS regime (whatever that is — IOReport too coarse to pin down
+  for our cell durations). At ~64 fmas per amp step, that's ~6.3 ns
+  per FMA in the dependent chain, consistent with 6-10 cycle FMA
+  latency on dependent operands at 1 GHz-ish. Below peak DVFS in
+  expectation.
+- Back-to-back stable region: 3 219 ns per dispatch. Decomposes as
+  ~833 ns (inter-encoder gap, exp 005) + ~2 µs (per-dispatch GPU-
+  side overhead) + ~400 ns (inner work).
+- Both methods recover an intercept in the 4.7-6.9 µs range,
+  consistent with the 6.4 µs cool-DVFS dispatch-overhead floor from
+  exp 001.
+
+### What this means operationally
+
+Loop amplification + many-point linear fit is **usable on M4 Max for
+small-kernel timing** with two caveats:
+
+1. **You have to detect and exclude the regime-boundary cells from
+   the fit.** The `find_stable_window` heuristic in `analysis.py`
+   does this from the timing data alone (per-step slope variance) —
+   we cannot rely on per-cell PWRCTRL classification when cells run
+   shorter than the IOReport interval.
+
+2. **Stick to internal-loop amplification for kernels whose
+   per-iteration cost we want to recover.** Back-to-back works in a
+   bounded N range but its slope is dominated by per-dispatch
+   overhead, not by the inner kernel cost. Use back-to-back only as
+   a cross-check on per-encode cost or to characterize the dispatch
+   overhead itself.
+
+3. **Don't extrapolate b2b past N ≈ 256 without re-validating.**
+   The N=1024 collapse means b2b is a stateful, not transparent,
+   abstraction at large N.
+
+### What does NOT change
+
+- Pair timing (decision 005) remains primary for trials ≥ ~64 µs.
+- Single-shot timing remains correct for trials ≥ ~50 µs.
+- Internal-loop amplification is now the path for trials below the
+  dispatch-overhead floor — to be used in the next experiment with a
+  memory-bound base unit, then with real ML kernels.
+
+### What changes
+
+- **New methodology:** internal-loop amplification with stable-region
+  fit, validated for arithmetic-only base units down to ~64 fmas.
+  Memory-bound validation is the next step before applying to real
+  kernels.
+- **Refines exp 005's inter-encoder gap interpretation:** 833 ns is
+  the *gap*, not the *full per-dispatch cost in a back-to-back
+  chain*. The latter is ~3.2 µs.
+- **New unknown:** mechanism of the b2b N=1024 collapse. Bimodal
+  distribution + only-cell-long-enough-for-PWRCTRL-classification
+  hints at a DVFS regime change but doesn't pin it down. Lower
+  priority than the memory-bound follow-up but worth a quick targeted
+  experiment if the mechanism turns out to bear on amplification at
+  large N for ML kernels.

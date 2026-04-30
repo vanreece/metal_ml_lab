@@ -1,0 +1,15 @@
+# IOReport telemetry  interval=250ms  csv=/Users/vanreece/dev/metal_ml_lab/experiments/014-amplification-validation/raw/20260429T115430.csv  states_csv=/Users/vanreece/dev/metal_ml_lab/experiments/014-amplification-validation/raw/20260429T115430-states.csv
+# Ctrl-C to stop
+# time        gpu mW    cpu mW    ane mW   dram mW   amcc mW    dcs mW    afr mW   disp mW    isp mW    ave mW  gpu_sram mW
+  11:54:31     80 mW   5131 mW      0 mW    547 mW   1221 mW   1757 mW      5 mW    125 mW      5 mW      5 mW      0 mW
+  11:54:31     77 mW   5927 mW      0 mW    612 mW   1307 mW   1854 mW      7 mW    129 mW      5 mW      5 mW      0 mW
+  11:54:32     65 mW   5821 mW      0 mW    573 mW   1279 mW   1840 mW      5 mW    118 mW      2 mW      2 mW      0 mW
+  11:54:32     67 mW   5681 mW      0 mW    579 mW   1250 mW   1772 mW      4 mW    138 mW      4 mW      4 mW      0 mW
+  11:54:33     59 mW   6168 mW      0 mW    653 mW   1323 mW   1863 mW      4 mW    120 mW      4 mW      4 mW      0 mW
+  11:54:33     76 mW   5729 mW      0 mW    574 mW   1272 mW   1830 mW      4 mW    117 mW      4 mW      4 mW      0 mW
+  11:54:34     69 mW   6178 mW      0 mW    650 mW   1370 mW   1928 mW      5 mW    141 mW      2 mW      2 mW      0 mW
+  11:54:34    748 mW   7073 mW      0 mW    606 mW   1260 mW   1780 mW     60 mW    122 mW      4 mW      4 mW      0 mW
+  11:54:35    109 mW   6173 mW      0 mW    607 mW   1293 mW   1846 mW     13 mW    120 mW      4 mW      4 mW      0 mW
+  11:54:35     73 mW   6586 mW      0 mW    695 mW   1375 mW   1938 mW      5 mW    102 mW      5 mW      5 mW      0 mW
+  11:54:35     65 mW   6476 mW      0 mW    670 mW   1340 mW   1877 mW      7 mW    126 mW      2 mW      2 mW      0 mW
+  11:54:36     65 mW   6578 mW      0 mW    684 mW   1335 mW   1880 mW      2 mW    151 mW      5 mW      5 mW      0 mW
