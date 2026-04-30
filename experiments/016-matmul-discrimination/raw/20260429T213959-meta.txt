@@ -1,0 +1,69 @@
+experiment: 016-matmul-discrimination
+timestamp: 20260429T213959
+device: Apple M4 Max
+architecture: applegpu_g16s
+os: macOS-26.4.1-arm64-arm-64bit-Mach-O
+python: 3.14.4 (main, Apr 14 2026, 14:46:33) [Clang 22.1.3 ]
+pyobjc: 12.1
+numpy: 2.4.4
+qos: pthread_set_qos_class_self_np -> 0
+power: Now drawing from 'AC Power'
+trials_csv: 20260429T213959-trials.csv
+cells_csv: 20260429T213959-cells.csv
+energy_csv: 20260429T213959.csv
+states_csv: 20260429T213959-states.csv
+telemetry_interval_ms: 250
+baseline_s: 2.0
+tail_s: 2.0
+cell_duration_s: 5.0
+inter_cell_s: 1.0
+max_trials_per_cell: 5000
+resolve_chunk_trials: 2000
+threadgroup: 16x16
+init_seed: 16092604
+max_a_floats: 4194304
+max_b_floats: 33554432
+max_c_floats: 4194304
+trial_budget_s: 0.08
+assumed_fp32_rate: 1400000000000.0
+sanity_check_max_abs_err: 0.0
+shape_count: 34
+cell_count: 247
+run_start_monotonic_ns: 67437939549041
+run_end_monotonic_ns:   68291524105541
+run_wall_clock_s: 853.58
+shapes_with_amp_grids:
+  square      m=8     n=8     k=8     amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  square      m=12    n=12    k=12    amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  square      m=16    n=16    k=16    amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  square      m=24    n=24    k=24    amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  square      m=32    n=32    k=32    amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  square      m=48    n=48    k=48    amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  square      m=64    n=64    k=64    amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  square      m=96    n=96    k=96    amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  square      m=128   n=128   k=128   amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  square      m=192   n=192   k=192   amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  square      m=256   n=256   k=256   amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  square      m=384   n=384   k=384   amp_grid=[1, 2, 4, 8, 16, 64, 256]
+  square      m=512   n=512   k=512   amp_grid=[1, 2, 4, 8, 16, 64, 256]
+  square      m=768   n=768   k=768   amp_grid=[1, 2, 4, 8, 16, 64]
+  square      m=1024  n=1024  k=1024  amp_grid=[1, 2, 4, 8, 16]
+  square      m=1536  n=1536  k=1536  amp_grid=[1, 2, 4, 8]
+  square      m=2048  n=2048  k=2048  amp_grid=[1, 2, 4, 8]
+  ksweep_128  m=128   n=128   k=2     amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  ksweep_128  m=128   n=128   k=4     amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  ksweep_128  m=128   n=128   k=16    amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  ksweep_128  m=128   n=128   k=64    amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  ksweep_128  m=128   n=128   k=256   amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  ksweep_128  m=128   n=128   k=1024  amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  ksweep_128  m=128   n=128   k=4096  amp_grid=[1, 2, 4, 8, 16, 64, 256]
+  ksweep_512  m=512   n=512   k=2     amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  ksweep_512  m=512   n=512   k=4     amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  ksweep_512  m=512   n=512   k=16    amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  ksweep_512  m=512   n=512   k=64    amp_grid=[1, 2, 4, 8, 16, 64, 256, 1024]
+  ksweep_512  m=512   n=512   k=256   amp_grid=[1, 2, 4, 8, 16, 64, 256]
+  ksweep_512  m=512   n=512   k=1024  amp_grid=[1, 2, 4, 8, 16, 64]
+  ksweep_512  m=512   n=512   k=4096  amp_grid=[1, 2, 4, 8, 16]
+  membound    m=8     n=4096  k=4096  amp_grid=[1, 2, 4, 8, 16, 64, 256]
+  membound    m=4     n=8192  k=4096  amp_grid=[1, 2, 4, 8, 16, 64, 256]
+  membound    m=2     n=8192  k=4096  amp_grid=[1, 2, 4, 8, 16, 64, 256]

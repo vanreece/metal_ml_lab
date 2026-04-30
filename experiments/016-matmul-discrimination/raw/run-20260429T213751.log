@@ -1,0 +1,70 @@
+Installed 4 packages in 27ms
+==============================================================================
+Experiment 016: matmul shape-discrimination (naive fp32)
+==============================================================================
+device: Apple M4 Max  arch: applegpu_g16s
+OS:     macOS-26.4.1-arm64-arm-64bit-Mach-O
+power:  Now drawing from 'AC Power'
+qos:    pthread_set_qos_class_self_np -> 0
+
+plan: 34 shapes, 247 cells
+
+buffer sizes: A=16.0MiB  B=128.0MiB  C=16.0MiB
+initializing A (4,194,304 floats) and B (33,554,432 floats) with seed 16092604...
+  initialized in 0.2s
+
+sanity check: M=N=K=128, N_AMP=1...
+  max abs error vs numpy: 0.0000e+00
+
+compiling 247 pipelines...
+  done in 1.6s (6.5ms avg)
+sample-buffer slots per cell: 4000 (32000 B; resolves every 2000 trials)
+ioreport.py: pid=44932
+
+=== phase 0: baseline 2.0s ===
+
+=== phase 1: 247 cells ===
+  cell   0: square         8x   8x8     N=   1  trials= 5000 (CAP)  p50=      7250 p90=      7584  (0.57s)
+  cell   1: square         8x   8x8     N=   2  trials= 5000 (CAP)  p50=      7375 p90=      7666  (0.55s)
+  cell   2: square         8x   8x8     N=   4  trials= 5000 (CAP)  p50=      8208 p90=      8500  (0.56s)
+  cell   3: square         8x   8x8     N=   8  trials= 5000 (CAP)  p50=      9458 p90=      9750  (0.59s)
+  cell   4: square         8x   8x8     N=  16  trials= 5000 (CAP)  p50=     11792 p90=     12125  (0.59s)
+  cell   5: square         8x   8x8     N=  64  trials= 5000 (CAP)  p50=     26167 p90=     26458  (0.65s)
+  cell   6: square         8x   8x8     N= 256  trials= 5000 (CAP)  p50=     83542 p90=     83916  (0.90s)
+  cell   7: square         8x   8x8     N=1024  trials= 5000 (CAP)  p50=    133500 p90=    313375  (1.64s)
+  cell   8: square        12x  12x12    N=   1  trials= 5000 (CAP)  p50=      8333 p90=      8667  (0.56s)
+  cell   9: square        12x  12x12    N=   2  trials= 5000 (CAP)  p50=      7958 p90=      8208  (0.57s)
+  cell  10: square        12x  12x12    N=   4  trials= 5000 (CAP)  p50=      9250 p90=      9542  (0.62s)
+  cell  11: square        12x  12x12    N=   8  trials= 5000 (CAP)  p50=     10750 p90=     11208  (0.57s)
+  cell  12: square        12x  12x12    N=  16  trials= 5000 (CAP)  p50=     14167 p90=     14500  (0.59s)
+  cell  13: square        12x  12x12    N=  64  trials= 5000 (CAP)  p50=     33625 p90=     34083  (0.70s)
+  cell  14: square        12x  12x12    N= 256  trials= 5000 (CAP)  p50=     63208 p90=    115208  (0.97s)
+  cell  15: square        12x  12x12    N=1024  trials= 5000 (CAP)  p50=    181375 p90=    426708  (2.03s)
+  cell  16: square        16x  16x16    N=   1  trials= 5000 (CAP)  p50=      8416 p90=      8875  (0.59s)
+  cell  17: square        16x  16x16    N=   2  trials= 5000 (CAP)  p50=      9709 p90=     10125  (0.60s)
+  cell  18: square        16x  16x16    N=   4  trials= 5000 (CAP)  p50=     11250 p90=     11666  (0.60s)
+  cell  19: square        16x  16x16    N=   8  trials= 5000 (CAP)  p50=     14333 p90=     14791  (0.62s)
+  cell  20: square        16x  16x16    N=  16  trials= 5000 (CAP)  p50=     20375 p90=     20792  (0.63s)
+  cell  21: square        16x  16x16    N=  64  trials= 5000 (CAP)  p50=     21292 p90=     57375  (0.72s)
+  cell  22: square        16x  16x16    N= 256  trials= 5000 (CAP)  p50=    200959 p90=    202750  (1.33s)
+  cell  23: square        16x  16x16    N=1024  trials= 5000 (CAP)  p50=    286042 p90=    499000  (2.42s)
+  cell  24: square        24x  24x24    N=   1  trials= 5000 (CAP)  p50=      9709 p90=     10125  (0.60s)
+  cell  25: square        24x  24x24    N=   2  trials= 5000 (CAP)  p50=     11000 p90=     11584  (0.62s)
+  cell  26: square        24x  24x24    N=   4  trials= 5000 (CAP)  p50=     13041 p90=     13750  (0.60s)
+  cell  27: square        24x  24x24    N=   8  trials= 5000 (CAP)  p50=     17708 p90=     18083  (0.62s)
+  cell  28: square        24x  24x24    N=  16  trials= 5000 (CAP)  p50=     26708 p90=     27292  (0.64s)
+  cell  29: square        24x  24x24    N=  64  trials= 5000 (CAP)  p50=     80417 p90=     81542  (0.88s)
+  cell  30: square        24x  24x24    N= 256  trials= 5000 (CAP)  p50=     87958 p90=    307291  (1.38s)
+  cell  31: square        24x  24x24    N=1024  trials= 5000 (CAP)  p50=    309125 p90=    509083  (2.52s)
+
+stopping ioreport.py (SIGINT)
+ioreport.py rc=0
+Traceback (most recent call last):
+  File "/Users/vanreece/dev/metal_ml_lab/experiments/016-matmul-discrimination/run.py", line 569, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/vanreece/dev/metal_ml_lab/experiments/016-matmul-discrimination/run.py", line 449, in main
+    sb = make_sample_buffer(device, counter_set, sb_slots, label)
+  File "/Users/vanreece/dev/metal_ml_lab/experiments/016-matmul-discrimination/run.py", line 193, in make_sample_buffer
+    raise RuntimeError(f"sample buffer alloc failed ({label}): {err}")
+RuntimeError: sample buffer alloc failed (exp016-square-32x32x32-N1): Error Domain=MTLCounterErrorDomain Code=0 "Cannot allocate sample buffer" UserInfo={NSLocalizedDescription=Cannot allocate sample buffer}

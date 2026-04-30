@@ -12,17 +12,17 @@ as carefully as the code.
 
 ## Status
 
-Early but moving. As of 2026-04-29, thirteen experiments are
-complete (001-008 on both M1 Pro and M4 Max; 009-013 M4 Max only).
-The lab is structurally multi-hardware with methodology decisions
-per-chip. The 009-013 arc characterized the M4 Max DVFS state
-machine in detail; exp 014 (amplification methodology) is
-pre-registered as the bridge to the project's bottleneck-
-classification thesis.
+Early but moving. As of 2026-04-29, seventeen experiments are
+complete (001-008 on both M1 Pro and M4 Max; 009-016 M4 Max only).
+**The methodology arc 001-016 is closed**: timing infrastructure
+(001-006), telemetry (007-008), DVFS state-machine (009-013),
+amplification methodology validated on synthetic compute & memory
+(014-015), and discrimination methodology validated on a real ML
+kernel (naive fp32 matmul, exp 016).
 
 For the current snapshot of what's known, what's open, and what
 methodology applies on each chip, see
-[`notes/state-2026-04-29.md`](notes/state-2026-04-29.md).
+[`notes/state-2026-04-29-post016.md`](notes/state-2026-04-29-post016.md).
 
 Headline status:
 

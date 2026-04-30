@@ -1,0 +1,474 @@
+loaded: 247 cells, 340208 state rows
+shapes: 34
+
+========================================================================================================================
+Per-cell summary (compact)
+========================================================================================================================
+cell sweep       shape               N_AMP trials        p50        p90        p99  PWRCTRL top               P15%  klass    
+------------------------------------------------------------------------------------------------------------------------
+   0 square      8x8x8                   1   5000    7.25 µs    7.58 µs    9.88 µs  IDLE_OFF(44%) PERF(35%)    10%  MIXED    
+   1 square      8x8x8                   2   5000    7.25 µs    8.12 µs   13.33 µs  IDLE_OFF(52%) PERF(39%)     0%  IDLE     
+   2 square      8x8x8                   4   5000    8.21 µs    8.54 µs    9.42 µs  PERF(40%) DEADLINE(39%)    15%  DEADLINE 
+   3 square      8x8x8                   8   5000    9.38 µs    9.75 µs   15.83 µs  IDLE_OFF(75%) PERF(25%)     0%  IDLE     
+   4 square      8x8x8                  16   5000   11.71 µs   12.62 µs   15.58 µs  PERF(44%) IDLE_OFF(33%)     1%  MIXED    
+   5 square      8x8x8                  64   5000   26.08 µs   26.42 µs   27.21 µs  IDLE_OFF(43%) PERF(36%)     9%  MIXED    
+   6 square      8x8x8                 256   5000   45.92 µs   83.79 µs   92.17 µs  PERF(42%) IDLE_OFF(35%)     9%  MIXED    
+   7 square      8x8x8                1024   5000   80.96 µs  313.25 µs  314.25 µs  DEADLINE(45%) PERF(33%)    21%  DEADLINE 
+   8 square      12x12x12                1   5000    8.38 µs    9.08 µs   15.50 µs  PERF(48%) IDLE_OFF(40%)     0%  MIXED    
+   9 square      12x12x12                2   5000    4.79 µs    8.29 µs   10.38 µs  DEADLINE(52%) IDLE_OFF(28%)   30%  DEADLINE 
+  10 square      12x12x12                4   5000    9.17 µs    9.54 µs   14.33 µs  PERF(48%) IDLE_OFF(32%)     9%  MIXED    
+  11 square      12x12x12                8   5000   10.75 µs   11.25 µs   17.46 µs  IDLE_OFF(51%) PERF(27%)     0%  IDLE     
+  12 square      12x12x12               16   5000   14.17 µs   14.50 µs   17.92 µs  IDLE_OFF(43%) PERF(37%)     8%  MIXED    
+  13 square      12x12x12               64   5000   33.46 µs   34.12 µs   35.88 µs  PERF(47%) IDLE_OFF(30%)    11%  MIXED    
+  14 square      12x12x12              256   5000   36.83 µs  114.92 µs  119.67 µs  DEADLINE(43%) IDLE_OFF(32%)   13%  DEADLINE 
+  15 square      12x12x12             1024   5000  103.79 µs  424.42 µs  431.21 µs  DEADLINE(46%) PERF(32%)    24%  DEADLINE 
+  16 square      16x16x16                1   5000    8.33 µs    8.75 µs   11.17 µs  IDLE_OFF(42%) PERF(39%)     9%  MIXED    
+  17 square      16x16x16                2   5000    9.71 µs   10.04 µs   18.38 µs  PERF(53%) IDLE_OFF(47%)     0%  PERF     
+  18 square      16x16x16                4   5000    5.21 µs   11.62 µs   13.62 µs  DEADLINE(51%) IDLE_OFF(25%)   29%  DEADLINE 
+  19 square      16x16x16                8   5000   12.83 µs   14.62 µs   17.79 µs  PERF(50%) IDLE_OFF(29%)    10%  MIXED    
+  20 square      16x16x16               16   5000    9.00 µs   20.71 µs   23.46 µs  IDLE_OFF(53%) PERF(23%)     2%  IDLE     
+  21 square      16x16x16               64   5000   31.04 µs   57.29 µs   61.46 µs  IDLE_OFF(44%) PERF(36%)     9%  MIXED    
+  22 square      16x16x16              256   5000   57.88 µs  202.29 µs  204.50 µs  DEADLINE(36%) PERF(34%)    16%  DEADLINE 
+  23 square      16x16x16             1024   5000  192.04 µs  433.83 µs  784.62 µs  DEADLINE(47%) PERF(41%)    25%  DEADLINE 
+  24 square      24x24x24                1   5000    9.62 µs    9.96 µs   11.79 µs  IDLE_OFF(42%) PERF(39%)     8%  MIXED    
+  25 square      24x24x24                2   5000   10.92 µs   11.33 µs   26.00 µs  PERF(51%) IDLE_OFF(49%)     0%  PERF     
+  26 square      24x24x24                4   5000    4.67 µs   13.62 µs   15.75 µs  DEADLINE(60%) IDLE_OFF(29%)   40%  DEADLINE 
+  27 square      24x24x24                8   5000   17.58 µs   18.04 µs   23.33 µs  PERF(46%) IDLE_OFF(33%)     9%  MIXED    
+  28 square      24x24x24               16   5000   10.29 µs   27.04 µs   28.17 µs  IDLE_OFF(50%) DEADLINE(30%)    8%  DEADLINE 
+  29 square      24x24x24               64   5000   21.29 µs   81.17 µs   82.25 µs  PERF(42%) DEADLINE(42%)    18%  DEADLINE 
+  30 square      24x24x24              256   5000   79.00 µs  306.67 µs  308.96 µs  DEADLINE(60%) PERF(34%)    26%  DEADLINE 
+  31 square      24x24x24             1024   5000  295.88 µs  519.79 µs  658.42 µs  DEADLINE(53%) PERF(42%)    27%  DEADLINE 
+  32 square      32x32x32                1   5000   10.96 µs   11.29 µs   14.92 µs  PERF(47%) IDLE_OFF(31%)    10%  MIXED    
+  33 square      32x32x32                2   5000    5.12 µs   13.00 µs   13.92 µs  IDLE_OFF(50%) DEADLINE(41%)   15%  DEADLINE 
+  34 square      32x32x32                4   5000   16.54 µs   16.88 µs   27.21 µs  PERF(43%) IDLE_OFF(37%)     9%  MIXED    
+  35 square      32x32x32                8   5000   22.54 µs   23.08 µs   32.54 µs  PERF(43%) IDLE_OFF(35%)    11%  MIXED    
+  36 square      32x32x32               16   5000   15.67 µs   36.29 µs   37.46 µs  PERF(43%) IDLE_OFF(36%)     0%  MIXED    
+  37 square      32x32x32               64   5000   37.04 µs  115.29 µs  116.04 µs  IDLE_OFF(47%) PERF(30%)    11%  MIXED    
+  38 square      32x32x32              256   5000  106.38 µs  432.96 µs  443.08 µs  DEADLINE(59%) PERF(30%)    27%  DEADLINE 
+  39 square      32x32x32             1024   5000  486.71 µs  562.46 µs  623.38 µs  PERF(54%) DEADLINE(40%)    21%  PERF     
+  40 square      48x48x48                1   5000   12.04 µs   12.38 µs   22.29 µs  IDLE_OFF(45%) PERF(37%)     8%  MIXED    
+  41 square      48x48x48                2   5000   15.54 µs   16.38 µs   17.04 µs  PERF(52%) IDLE_OFF(46%)     0%  PERF     
+  42 square      48x48x48                4   5000   10.04 µs   22.46 µs   24.58 µs  DEADLINE(41%) PERF(34%)    18%  DEADLINE 
+  43 square      48x48x48                8   5000   34.04 µs   35.54 µs   38.46 µs  IDLE_OFF(45%) PERF(34%)     9%  MIXED    
+  44 square      48x48x48               16   5000   34.08 µs   61.62 µs   65.67 µs  PERF(43%) IDLE_OFF(35%)    11%  MIXED    
+  45 square      48x48x48               64   5000   69.54 µs  216.38 µs  226.67 µs  PERF(39%) DEADLINE(33%)    13%  DEADLINE 
+  46 square      48x48x48              256   5000  221.54 µs  470.58 µs  859.96 µs  PERF(45%) DEADLINE(40%)    22%  DEADLINE 
+  47 square      48x48x48             1024   5000  730.67 µs  732.50 µs  746.38 µs  PERF(98%) IDLE_OFF(2%)     97%  PERF     
+  48 square      64x64x64                1   5000   14.67 µs   15.04 µs   16.88 µs  IDLE_OFF(43%) PERF(36%)    10%  MIXED    
+  49 square      64x64x64                2   5000   18.12 µs   18.75 µs   27.71 µs  IDLE_OFF(55%) PERF(45%)     0%  IDLE     
+  50 square      64x64x64                4   5000   13.88 µs   25.17 µs   26.12 µs  PERF(42%) IDLE_OFF(37%)     0%  MIXED    
+  51 square      64x64x64                8   5000   21.21 µs   38.21 µs   43.50 µs  IDLE_OFF(49%) PERF(31%)     9%  MIXED    
+  52 square      64x64x64               16   5000   27.75 µs   64.33 µs   70.17 µs  IDLE_OFF(44%) PERF(35%)     9%  MIXED    
+  53 square      64x64x64               64   5000   63.67 µs  220.58 µs  226.75 µs  DEADLINE(38%) PERF(36%)    17%  DEADLINE 
+  54 square      64x64x64              256   5000  208.92 µs  465.08 µs  849.58 µs  DEADLINE(42%) PERF(41%)    21%  DEADLINE 
+  55 square      64x64x64             1024   5000  720.00 µs  720.83 µs  735.88 µs  PERF(97%) IDLE_OFF(3%)     95%  PERF     
+  56 square      96x96x96                1   5000   15.83 µs   16.33 µs   19.75 µs  PERF(45%) IDLE_OFF(33%)    11%  MIXED    
+  57 square      96x96x96                2   5000   10.50 µs   23.33 µs   35.12 µs  IDLE_OFF(40%) PERF(39%)     0%  MIXED    
+  58 square      96x96x96                4   5000   15.42 µs   35.67 µs   41.54 µs  DEADLINE(41%) IDLE_OFF(30%)   18%  DEADLINE 
+  59 square      96x96x96                8   5000   33.12 µs   61.21 µs   77.58 µs  PERF(40%) IDLE_OFF(38%)    11%  MIXED    
+  60 square      96x96x96               16   5000   29.17 µs  111.71 µs  115.17 µs  IDLE_OFF(46%) PERF(35%)     8%  MIXED    
+  61 square      96x96x96               64   5000  100.75 µs  411.88 µs  430.04 µs  DEADLINE(60%) PERF(32%)    26%  DEADLINE 
+  62 square      96x96x96              256   5000  373.00 µs  518.17 µs  595.08 µs  PERF(77%) DEADLINE(19%)    42%  PERF     
+  63 square      96x96x96             1024   3268   1.365 ms   1.371 ms   1.410 ms  PERF(94%) IDLE_OFF(4%)     94%  PERF     
+  64 square      128x128x128             1   5000   23.08 µs   23.46 µs   35.62 µs  IDLE_OFF(40%) PERF(39%)     8%  MIXED    
+  65 square      128x128x128             2   5000   32.38 µs   33.00 µs   59.46 µs  PERF(42%) IDLE_OFF(36%)    11%  MIXED    
+  66 square      128x128x128             4   5000   29.25 µs   52.42 µs   60.08 µs  PERF(40%) DEADLINE(37%)    11%  DEADLINE 
+  67 square      128x128x128             8   5000   39.08 µs   90.38 µs   98.21 µs  PERF(42%) DEADLINE(39%)    10%  DEADLINE 
+  68 square      128x128x128            16   5000   48.50 µs  167.88 µs  201.33 µs  PERF(47%) DEADLINE(36%)    15%  MIXED    
+  69 square      128x128x128            64   5000  152.83 µs  617.38 µs  634.50 µs  DEADLINE(51%) PERF(41%)    22%  DEADLINE 
+  70 square      128x128x128           256   5000  534.17 µs  597.71 µs  743.79 µs  PERF(66%) DEADLINE(30%)    29%  PERF     
+  71 square      128x128x128          1024   2322   1.967 ms   2.000 ms   2.043 ms  PRFBOOST(97%) IDLE_OFF(2%)   97%  PRFBOOST 
+  72 square      192x192x192             1   5000   41.83 µs   42.62 µs   52.62 µs  IDLE_OFF(46%) PERF(35%)     8%  MIXED    
+  73 square      192x192x192             2   5000   32.58 µs   75.50 µs   88.46 µs  IDLE_OFF(39%) PERF(37%)    11%  MIXED    
+  74 square      192x192x192             4   5000   39.46 µs  137.38 µs  145.50 µs  PERF(39%) DEADLINE(34%)    17%  DEADLINE 
+  75 square      192x192x192             8   5000   76.12 µs  264.83 µs  275.04 µs  DEADLINE(51%) PERF(36%)    17%  DEADLINE 
+  76 square      192x192x192            16   5000  120.21 µs  518.50 µs  540.46 µs  DEADLINE(47%) PERF(35%)    25%  DEADLINE 
+  77 square      192x192x192            64   5000  500.17 µs  584.12 µs  867.12 µs  PERF(68%) DEADLINE(27%)    38%  PERF     
+  78 square      192x192x192           256   2622   1.723 ms   1.760 ms   1.788 ms  PERF(96%) IDLE_OFF(3%)     94%  PERF     
+  79 square      192x192x192          1024    704   6.917 ms   6.954 ms   7.023 ms  PRFBOOST(98%) IDLE_OFF(1%)   97%  PRFBOOST 
+  80 square      256x256x256             1   5000   34.29 µs   84.88 µs   98.46 µs  PERF(41%) IDLE_OFF(37%)    11%  MIXED    
+  81 square      256x256x256             2   5000   49.25 µs  152.54 µs  179.08 µs  DEADLINE(52%) PERF(39%)    20%  DEADLINE 
+  82 square      256x256x256             4   5000   75.67 µs  299.04 µs  328.33 µs  PERF(40%) DEADLINE(38%)    20%  DEADLINE 
+  83 square      256x256x256             8   5000  149.58 µs  577.42 µs  609.54 µs  DEADLINE(52%) PERF(41%)    22%  DEADLINE 
+  84 square      256x256x256            16   5000  294.67 µs  508.21 µs  627.17 µs  DEADLINE(53%) PERF(44%)    29%  DEADLINE 
+  85 square      256x256x256            64   4399  970.21 µs  973.58 µs  997.17 µs  PERF(96%) IDLE_OFF(4%)     94%  PERF     
+  86 square      256x256x256           256   1221   3.886 ms   3.957 ms   4.026 ms  PRFBOOST(84%) PWR_ZONE(12%)   94%  PRFBOOST 
+  87 square      256x256x256          1024    309  16.082 ms  16.438 ms  16.634 ms  FAST_DIE(82%) PRFBOOST(15%)   44%  MIXED    
+  88 square      384x384x384             1   5000   62.58 µs  238.79 µs  264.71 µs  PERF(37%) DEADLINE(37%)    19%  DEADLINE 
+  89 square      384x384x384             2   5000  119.92 µs  466.50 µs  489.08 µs  DEADLINE(43%) PERF(39%)    20%  DEADLINE 
+  90 square      384x384x384             4   5000  230.79 µs  486.33 µs  887.00 µs  DEADLINE(51%) PERF(43%)    25%  DEADLINE 
+  91 square      384x384x384             8   5000  380.75 µs  563.50 µs  746.58 µs  PERF(64%) DEADLINE(25%)    43%  PERF     
+  92 square      384x384x384            16   5000  751.83 µs  901.33 µs  998.46 µs  PERF(68%) UT(21%)          72%  PERF     
+  93 square      384x384x384            64   1461   3.211 ms   3.479 ms   3.692 ms  FAST_DIE(87%) PERF(9%)     20%  MIXED    
+  94 square      384x384x384           256    338  14.989 ms  15.303 ms  16.106 ms  UT(50%) FAST_DIE(43%)       5%  MIXED    
+  95 square      512x512x512             1   5000  144.67 µs  556.04 µs  576.08 µs  DEADLINE(45%) PERF(39%)    21%  DEADLINE 
+  96 square      512x512x512             2   5000  315.04 µs  592.58 µs  610.71 µs  DEADLINE(46%) PERF(46%)    21%  DEADLINE 
+  97 square      512x512x512             4   5000  551.12 µs  567.67 µs  698.42 µs  UT(83%) PERF(8%)            0%  MIXED    
+  98 square      512x512x512             8   4304   1.001 ms   1.061 ms   1.125 ms  FAST_DIE(84%) PERF(14%)    30%  MIXED    
+  99 square      512x512x512            16   2143   2.196 ms   2.246 ms   2.312 ms  UT(51%) FAST_DIE(37%)       4%  MIXED    
+ 100 square      512x512x512            64    548   8.984 ms   9.184 ms   9.415 ms  FAST_DIE(65%) UT(30%)       3%  MIXED    
+ 101 square      512x512x512           256    136  36.949 ms  37.987 ms  39.398 ms  FAST_DIE(80%) UT(10%)       2%  MIXED    
+ 102 square      768x768x768             1   5000  497.62 µs  571.58 µs  653.75 µs  PERF(55%) DEADLINE(29%)    21%  PERF     
+ 103 square      768x768x768             2   4809  900.79 µs  903.33 µs  943.38 µs  UT(47%) FAST_DIE(41%)       7%  MIXED    
+ 104 square      768x768x768             4   2556   1.801 ms   1.843 ms   1.897 ms  UT(56%) FAST_DIE(37%)       3%  MIXED    
+ 105 square      768x768x768             8   1324   3.631 ms   3.719 ms   3.786 ms  UT(56%) FAST_DIE(40%)       2%  MIXED    
+ 106 square      768x768x768            16    673   7.279 ms   7.476 ms   7.556 ms  FAST_DIE(50%) UT(42%)       2%  MIXED    
+ 107 square      768x768x768            64    172  29.055 ms  29.942 ms  30.472 ms  UT(41%) FAST_DIE(41%)       2%  MIXED    
+ 108 square      1024x1024x1024          1   4027   1.085 ms   1.092 ms   1.154 ms  UT(65%) FAST_DIE(27%)       4%  MIXED    
+ 109 square      1024x1024x1024          2   2065   2.238 ms   2.451 ms   2.521 ms  PWR_ZONE(41%) FAST_DIE(31%)    3%  MIXED    
+ 110 square      1024x1024x1024          4   1021   4.676 ms   5.128 ms   5.405 ms  PWR_ZONE(59%) UT(28%)       0%  MIXED    
+ 111 square      1024x1024x1024          8    504   9.877 ms  10.669 ms  11.597 ms  PWR_ZONE(87%) FAST_DIE(5%)    3%  MIXED    
+ 112 square      1024x1024x1024         16    249  20.291 ms  21.995 ms  23.465 ms  PWR_ZONE(82%) FAST_DIE(7%)    4%  MIXED    
+ 113 square      1536x1536x1536          1   1147   4.290 ms   4.661 ms   4.937 ms  PWR_ZONE(81%) IDLE_OFF(9%)    5%  MIXED    
+ 114 square      1536x1536x1536          2    548   9.413 ms   9.929 ms  10.681 ms  PWR_ZONE(88%) PERF(6%)      4%  MIXED    
+ 115 square      1536x1536x1536          4    277  19.265 ms  19.671 ms  20.955 ms  PWR_ZONE(90%) PRFBOOST(4%)    5%  MIXED    
+ 116 square      1536x1536x1536          8    136  39.151 ms  40.457 ms  44.969 ms  PWR_ZONE(87%) PERF(5%)      4%  MIXED    
+ 117 square      2048x2048x2048          1    404  13.150 ms  13.820 ms  15.984 ms  PWR_ZONE(92%) PRFBOOST(3%)    5%  MIXED    
+ 118 square      2048x2048x2048          2    198  27.343 ms  28.331 ms  30.280 ms  PWR_ZONE(89%) IDLE_OFF(6%)    4%  MIXED    
+ 119 square      2048x2048x2048          4     93  57.041 ms  64.593 ms  69.492 ms  PWR_ZONE(91%) IDLE_OFF(5%)    4%  MIXED    
+ 120 square      2048x2048x2048          8     47 117.104 ms 125.773 ms 130.512 ms  PWR_ZONE(94%) PRFBOOST(3%)    4%  MIXED    
+ 121 ksweep_128  128x128x2               1   5000    7.62 µs    7.83 µs   16.79 µs  PERF(48%) IDLE_OFF(31%)     9%  MIXED    
+ 122 ksweep_128  128x128x2               2   5000    7.67 µs    7.88 µs   78.58 µs  IDLE_OFF(54%) PERF(36%)     0%  IDLE     
+ 123 ksweep_128  128x128x2               4   5000    7.75 µs    7.96 µs    9.88 µs  IDLE_OFF(43%) PERF(41%)     5%  MIXED    
+ 124 ksweep_128  128x128x2               8   5000    7.96 µs    8.33 µs   24.67 µs  IDLE_OFF(51%) PERF(32%)     0%  IDLE     
+ 125 ksweep_128  128x128x2              16   5000    8.42 µs    8.67 µs   22.67 µs  DEADLINE(41%) PERF(35%)    18%  DEADLINE 
+ 126 ksweep_128  128x128x2              64   5000   11.54 µs   11.75 µs   20.12 µs  PERF(63%) DEADLINE(19%)     7%  PERF     
+ 127 ksweep_128  128x128x2             256   5000    7.92 µs   23.71 µs   34.75 µs  DEADLINE(44%) IDLE_OFF(39%)   20%  DEADLINE 
+ 128 ksweep_128  128x128x2            1024   5000   23.38 µs   71.79 µs   73.46 µs  IDLE_OFF(43%) PERF(37%)     9%  MIXED    
+ 129 ksweep_128  128x128x4               1   5000    4.04 µs    7.83 µs   10.04 µs  PERF(51%) DEADLINE(49%)    27%  DEADLINE 
+ 130 ksweep_128  128x128x4               2   5000    7.71 µs    7.96 µs   31.58 µs  IDLE_OFF(66%) PERF(34%)     0%  IDLE     
+ 131 ksweep_128  128x128x4               4   5000    8.04 µs    8.25 µs   12.21 µs  DEADLINE(40%) PERF(39%)    15%  DEADLINE 
+ 132 ksweep_128  128x128x4               8   5000    9.21 µs    9.46 µs   20.12 µs  PERF(70%) DEADLINE(21%)    10%  PERF     
+ 133 ksweep_128  128x128x4              16   5000    9.83 µs   10.08 µs   50.25 µs  IDLE_OFF(54%) PERF(38%)     0%  IDLE     
+ 134 ksweep_128  128x128x4              64   5000    9.54 µs   16.75 µs   31.54 µs  PERF(67%) DEADLINE(21%)     9%  PERF     
+ 135 ksweep_128  128x128x4             256   5000   44.21 µs   44.54 µs   64.96 µs  PERF(45%) IDLE_OFF(33%)    10%  MIXED    
+ 136 ksweep_128  128x128x4            1024   5000   49.21 µs  153.21 µs  183.33 µs  PERF(48%) IDLE_OFF(32%)    10%  MIXED    
+ 137 ksweep_128  128x128x16              1   5000    5.42 µs    9.46 µs   18.83 µs  DEADLINE(41%) IDLE_OFF(38%)   16%  DEADLINE 
+ 138 ksweep_128  128x128x16              2   5000   10.42 µs   10.71 µs   12.67 µs  PERF(44%) IDLE_OFF(36%)    10%  MIXED    
+ 139 ksweep_128  128x128x16              4   5000    7.58 µs   13.50 µs   23.12 µs  PERF(40%) IDLE_OFF(33%)     4%  MIXED    
+ 140 ksweep_128  128x128x16              8   5000   17.25 µs   17.62 µs   20.46 µs  PERF(75%) DEADLINE(21%)     9%  PERF     
+ 141 ksweep_128  128x128x16             16   5000   26.54 µs   26.88 µs   38.62 µs  PERF(91%) DEADLINE(9%)      0%  PERF     
+ 142 ksweep_128  128x128x16             64   5000   21.04 µs   80.62 µs   91.04 µs  DEADLINE(49%) PERF(42%)    25%  DEADLINE 
+ 143 ksweep_128  128x128x16            256   5000   73.12 µs  294.42 µs  309.62 µs  DEADLINE(55%) PERF(35%)    26%  DEADLINE 
+ 144 ksweep_128  128x128x16           1024   5000  285.38 µs  486.67 µs  627.21 µs  DEADLINE(51%) PERF(44%)    28%  DEADLINE 
+ 145 ksweep_128  128x128x64              1   5000   15.12 µs   15.46 µs   23.88 µs  IDLE_OFF(44%) PERF(36%)    10%  MIXED    
+ 146 ksweep_128  128x128x64              2   5000   19.75 µs   20.04 µs   35.12 µs  PERF(45%) IDLE_OFF(34%)    10%  MIXED    
+ 147 ksweep_128  128x128x64              4   5000   16.21 µs   29.12 µs   37.71 µs  IDLE_OFF(40%) PERF(35%)     0%  MIXED    
+ 148 ksweep_128  128x128x64              8   5000   19.92 µs   46.96 µs   51.75 µs  DEADLINE(49%) PERF(35%)    24%  DEADLINE 
+ 149 ksweep_128  128x128x64             16   5000   34.88 µs   82.46 µs   96.29 µs  IDLE_OFF(45%) PERF(36%)     7%  MIXED    
+ 150 ksweep_128  128x128x64             64   5000   72.88 µs  293.12 µs  326.38 µs  DEADLINE(53%) PERF(38%)    22%  DEADLINE 
+ 151 ksweep_128  128x128x64            256   5000  286.46 µs  492.46 µs  629.71 µs  DEADLINE(51%) PERF(44%)    26%  DEADLINE 
+ 152 ksweep_128  128x128x64           1024   3626   1.236 ms   1.302 ms   1.381 ms  PWR_ZONE(84%) PERF(13%)    13%  MIXED    
+ 153 ksweep_128  128x128x256             1   5000   38.04 µs   38.75 µs   43.79 µs  IDLE_OFF(45%) PERF(36%)     8%  MIXED    
+ 154 ksweep_128  128x128x256             2   5000   31.71 µs   56.29 µs  104.50 µs  PERF(40%) IDLE_OFF(38%)     9%  MIXED    
+ 155 ksweep_128  128x128x256             4   5000   34.92 µs   92.54 µs  109.42 µs  IDLE_OFF(43%) PERF(38%)     9%  MIXED    
+ 156 ksweep_128  128x128x256             8   5000   41.38 µs  162.96 µs  189.04 µs  PERF(51%) DEADLINE(35%)    17%  PERF     
+ 157 ksweep_128  128x128x256            16   5000   75.83 µs  303.58 µs  337.71 µs  DEADLINE(55%) PERF(28%)    25%  DEADLINE 
+ 158 ksweep_128  128x128x256            64   5000  301.33 µs  488.29 µs   1.051 ms  PERF(60%) DEADLINE(40%)    23%  PERF     
+ 159 ksweep_128  128x128x256           256   4362  973.38 µs  977.62 µs   1.020 ms  PERF(94%) IDLE_OFF(5%)     93%  PERF     
+ 160 ksweep_128  128x128x256          1024   1267   3.752 ms   3.805 ms   3.932 ms  PRFBOOST(89%) PWR_ZONE(7%)   95%  PRFBOOST 
+ 161 ksweep_128  128x128x1024            1   5000   36.79 µs  132.04 µs  141.12 µs  IDLE_OFF(46%) PERF(34%)    10%  MIXED    
+ 162 ksweep_128  128x128x1024            2   5000   61.00 µs  232.71 µs  240.92 µs  DEADLINE(47%) PERF(36%)    20%  DEADLINE 
+ 163 ksweep_128  128x128x1024            4   5000  105.79 µs  436.33 µs  446.46 µs  DEADLINE(63%) PERF(29%)    29%  DEADLINE 
+ 164 ksweep_128  128x128x1024            8   5000  198.75 µs  464.08 µs  842.08 µs  DEADLINE(58%) PERF(37%)    33%  DEADLINE 
+ 165 ksweep_128  128x128x1024           16   5000  460.12 µs  556.75 µs  603.17 µs  PERF(50%) DEADLINE(46%)    26%  DEADLINE 
+ 166 ksweep_128  128x128x1024           64   2903   1.579 ms   1.626 ms   1.646 ms  PWR_ZONE(74%) PERF(21%)    22%  MIXED    
+ 167 ksweep_128  128x128x1024          256    796   6.220 ms   6.357 ms   6.408 ms  PWR_ZONE(86%) PRFBOOST(10%)   18%  MIXED    
+ 168 ksweep_128  128x128x1024         1024    204  24.690 ms  25.715 ms  25.886 ms  PWR_ZONE(77%) PRFBOOST(13%)   23%  MIXED    
+ 169 ksweep_128  128x128x4096            1   5000  137.12 µs  497.00 µs  513.62 µs  DEADLINE(47%) PERF(37%)    23%  DEADLINE 
+ 170 ksweep_128  128x128x4096            2   5000  247.54 µs  517.96 µs  922.92 µs  DEADLINE(53%) PERF(40%)    24%  DEADLINE 
+ 171 ksweep_128  128x128x4096            4   5000  467.33 µs  573.04 µs  660.12 µs  PERF(52%) DEADLINE(45%)    28%  DEADLINE 
+ 172 ksweep_128  128x128x4096            8   5000  786.38 µs  789.17 µs  798.00 µs  PERF(99%) IDLE_OFF(0%)     91%  PERF     
+ 173 ksweep_128  128x128x4096           16   2934   1.538 ms   1.546 ms   1.616 ms  PRFBOOST(55%) PERF(38%)    91%  PRFBOOST 
+ 174 ksweep_128  128x128x4096           64    799   6.058 ms   6.094 ms   6.197 ms  PERF(94%) IDLE_OFF(6%)     92%  PERF     
+ 175 ksweep_128  128x128x4096          256    208  23.989 ms  24.062 ms  24.137 ms  PRFBOOST(96%) IDLE_OFF(2%)   96%  PRFBOOST 
+ 176 ksweep_512  512x512x2               1   5000    8.04 µs   14.29 µs   31.75 µs  PERF(43%) DEADLINE(43%)    18%  DEADLINE 
+ 177 ksweep_512  512x512x2               2   5000   14.04 µs   14.38 µs   22.88 µs  PERF(42%) IDLE_OFF(36%)    11%  MIXED    
+ 178 ksweep_512  512x512x2               4   5000   14.00 µs   14.58 µs   24.21 µs  PERF(53%) IDLE_OFF(25%)    11%  PERF     
+ 179 ksweep_512  512x512x2               8   5000    6.83 µs   17.33 µs   32.38 µs  DEADLINE(35%) PERF(33%)    13%  DEADLINE 
+ 180 ksweep_512  512x512x2              16   5000   21.62 µs   22.12 µs   37.62 µs  DEADLINE(41%) PERF(35%)    19%  DEADLINE 
+ 181 ksweep_512  512x512x2              64   5000   50.92 µs   51.38 µs   76.33 µs  PERF(43%) IDLE_OFF(35%)    11%  MIXED    
+ 182 ksweep_512  512x512x2             256   5000   51.38 µs  177.83 µs  194.12 µs  PERF(40%) DEADLINE(36%)    15%  DEADLINE 
+ 183 ksweep_512  512x512x2            1024   5000  174.00 µs  528.00 µs  684.54 µs  DEADLINE(52%) PERF(39%)    23%  DEADLINE 
+ 184 ksweep_512  512x512x4               1   5000   15.00 µs   15.79 µs   19.75 µs  PERF(53%) IDLE_OFF(47%)     0%  PERF     
+ 185 ksweep_512  512x512x4               2   5000    8.46 µs   15.08 µs   32.62 µs  DEADLINE(38%) PERF(38%)    16%  DEADLINE 
+ 186 ksweep_512  512x512x4               4   5000   19.25 µs   19.62 µs   31.88 µs  IDLE_OFF(41%) PERF(38%)    10%  MIXED    
+ 187 ksweep_512  512x512x4               8   5000   25.92 µs   26.33 µs   45.75 µs  PERF(52%) IDLE_OFF(26%)    10%  PERF     
+ 188 ksweep_512  512x512x4              16   5000   11.79 µs   40.46 µs   44.79 µs  IDLE_OFF(41%) DEADLINE(31%)    8%  DEADLINE 
+ 189 ksweep_512  512x512x4              64   5000   35.79 µs  124.79 µs  133.96 µs  DEADLINE(55%) PERF(29%)    21%  DEADLINE 
+ 190 ksweep_512  512x512x4             256   5000  119.75 µs  463.54 µs  487.17 µs  DEADLINE(47%) PERF(40%)    20%  DEADLINE 
+ 191 ksweep_512  512x512x4            1024   5000  477.71 µs  592.88 µs  677.38 µs  PERF(52%) DEADLINE(45%)    29%  DEADLINE 
+ 192 ksweep_512  512x512x16              1   5000   28.04 µs   28.50 µs   50.88 µs  IDLE_OFF(44%) PERF(35%)    10%  MIXED    
+ 193 ksweep_512  512x512x16              2   5000   43.96 µs   44.50 µs   54.04 µs  PERF(46%) IDLE_OFF(33%)    10%  MIXED    
+ 194 ksweep_512  512x512x16              4   5000   41.83 µs   76.38 µs  111.75 µs  PERF(48%) IDLE_OFF(29%)    12%  MIXED    
+ 195 ksweep_512  512x512x16              8   5000   45.50 µs  140.46 µs  156.04 µs  DEADLINE(35%) PERF(34%)    13%  DEADLINE 
+ 196 ksweep_512  512x512x16             16   5000   77.21 µs  268.42 µs  303.67 µs  PERF(46%) DEADLINE(37%)    19%  DEADLINE 
+ 197 ksweep_512  512x512x16             64   5000  267.33 µs  566.38 µs  651.54 µs  PERF(44%) DEADLINE(42%)    20%  DEADLINE 
+ 198 ksweep_512  512x512x16            256   4535  931.21 µs   1.034 ms   1.062 ms  PWR_ZONE(64%) PERF(23%)    30%  MIXED    
+ 199 ksweep_512  512x512x16           1024   1361   3.501 ms   3.543 ms   3.624 ms  PRFBOOST(89%) IDLE_OFF(5%)   93%  PRFBOOST 
+ 200 ksweep_512  512x512x64              1   5000   29.79 µs   79.46 µs   97.46 µs  DEADLINE(43%) PERF(39%)    10%  DEADLINE 
+ 201 ksweep_512  512x512x64              2   5000   45.71 µs  143.08 µs  156.25 µs  PERF(49%) IDLE_OFF(30%)    10%  MIXED    
+ 202 ksweep_512  512x512x64              4   5000   69.00 µs  264.29 µs  287.29 µs  DEADLINE(54%) PERF(34%)    25%  DEADLINE 
+ 203 ksweep_512  512x512x64              8   5000  133.12 µs  514.46 µs  540.75 µs  DEADLINE(56%) PERF(35%)    22%  DEADLINE 
+ 204 ksweep_512  512x512x64             16   5000  291.54 µs  557.00 µs  782.58 µs  DEADLINE(43%) PERF(41%)    22%  DEADLINE 
+ 205 ksweep_512  512x512x64             64   4829  861.88 µs  869.79 µs  893.62 µs  PERF(93%) IDLE_OFF(7%)     91%  PERF     
+ 206 ksweep_512  512x512x64            256   1367   3.457 ms   3.579 ms   3.729 ms  PRFBOOST(71%) PWR_ZONE(22%)   87%  PRFBOOST 
+ 207 ksweep_512  512x512x64           1024    346  14.160 ms  15.130 ms  16.553 ms  PERF(71%) PWR_ZONE(25%)    79%  PERF     
+ 208 ksweep_512  512x512x256             1   5000   73.54 µs  286.08 µs  298.67 µs  DEADLINE(59%) PERF(32%)    31%  DEADLINE 
+ 209 ksweep_512  512x512x256             2   5000  139.17 µs  547.04 µs  564.33 µs  DEADLINE(60%) PERF(31%)    29%  DEADLINE 
+ 210 ksweep_512  512x512x256             4   5000  298.62 µs  568.54 µs   1.027 ms  PERF(46%) DEADLINE(41%)    21%  DEADLINE 
+ 211 ksweep_512  512x512x256             8   5000  520.62 µs  591.33 µs  674.25 µs  PERF(52%) DEADLINE(23%)    18%  PERF     
+ 212 ksweep_512  512x512x256            16   4687  881.96 µs  944.46 µs  976.29 µs  PWR_ZONE(51%) PERF(46%)    75%  MIXED    
+ 213 ksweep_512  512x512x256            64   1332   3.552 ms   3.679 ms   3.807 ms  PRFBOOST(58%) FAST_DIE(21%)   82%  PRFBOOST 
+ 214 ksweep_512  512x512x256           256    328  15.052 ms  15.598 ms  16.070 ms  FAST_DIE(79%) PRFBOOST(14%)   45%  MIXED    
+ 215 ksweep_512  512x512x1024            1   5000  290.33 µs  597.08 µs  731.58 µs  DEADLINE(54%) PERF(39%)    25%  DEADLINE 
+ 216 ksweep_512  512x512x1024            2   5000  570.88 µs  578.88 µs  798.50 µs  UT(80%) PERF(15%)           0%  MIXED    
+ 217 ksweep_512  512x512x1024            4   4382  952.12 µs   1.016 ms   1.056 ms  PERF(55%) FAST_DIE(41%)    81%  PERF     
+ 218 ksweep_512  512x512x1024            8   2272   2.032 ms   2.107 ms   2.224 ms  FAST_DIE(90%) PRFBOOST(7%)   25%  MIXED    
+ 219 ksweep_512  512x512x1024           16   1114   4.347 ms   4.533 ms   4.712 ms  UT(34%) FAST_DIE(32%)       8%  MIXED    
+ 220 ksweep_512  512x512x1024           64    279  17.870 ms  18.666 ms  19.221 ms  FAST_DIE(51%) UT(40%)       6%  MIXED    
+ 221 ksweep_512  512x512x4096            1   4038   1.034 ms   1.152 ms   1.198 ms  FAST_DIE(92%) PERF(6%)     10%  MIXED    
+ 222 ksweep_512  512x512x4096            2   2083   2.233 ms   2.307 ms   2.375 ms  UT(66%) FAST_DIE(23%)       4%  MIXED    
+ 223 ksweep_512  512x512x4096            4   1042   4.637 ms   4.853 ms   4.932 ms  UT(71%) FAST_DIE(22%)       3%  MIXED    
+ 224 ksweep_512  512x512x4096            8    523   9.444 ms   9.797 ms  10.002 ms  UT(71%) FAST_DIE(18%)       3%  MIXED    
+ 225 ksweep_512  512x512x4096           16    261  19.105 ms  19.717 ms  20.305 ms  UT(54%) FAST_DIE(37%)       3%  MIXED    
+ 226 membound    8x4096x4096             1   5000  342.42 µs  537.54 µs  826.71 µs  DEADLINE(47%) PERF(40%)    19%  DEADLINE 
+ 227 membound    8x4096x4096             2   5000  613.75 µs  624.67 µs  736.58 µs  PERF(93%) IDLE_OFF(7%)     83%  PERF     
+ 228 membound    8x4096x4096             4   3555   1.231 ms   1.243 ms   1.293 ms  PERF(93%) IDLE_OFF(7%)     90%  PERF     
+ 229 membound    8x4096x4096             8   1871   2.491 ms   2.516 ms   2.577 ms  PRFBOOST(93%) IDLE_OFF(5%)   93%  PRFBOOST 
+ 230 membound    8x4096x4096            16    962   5.017 ms   5.058 ms   5.116 ms  PRFBOOST(96%) IDLE_OFF(2%)   96%  PRFBOOST 
+ 231 membound    8x4096x4096            64    247  20.098 ms  20.279 ms  20.636 ms  PRFBOOST(71%) PWR_ZONE(22%)   81%  PRFBOOST 
+ 232 membound    8x4096x4096           256     54  85.606 ms 118.307 ms 121.257 ms  PWR_ZONE(86%) PRFBOOST(8%)   19%  MIXED    
+ 233 membound    4x8192x4096             1   5000  437.79 µs  557.88 µs  763.50 µs  PERF(46%) DEADLINE(35%)    19%  MIXED    
+ 234 membound    4x8192x4096             2   3918  898.42 µs   1.679 ms   1.918 ms  PWR_ZONE(84%) PERF(11%)    10%  MIXED    
+ 235 membound    4x8192x4096             4   1942   2.179 ms   3.374 ms   5.096 ms  PWR_ZONE(96%) IDLE_OFF(3%)    0%  MIXED    
+ 236 membound    4x8192x4096             8    938   4.642 ms   8.139 ms  12.778 ms  PWR_ZONE(90%) IDLE_OFF(7%)    0%  MIXED    
+ 237 membound    4x8192x4096            16    452  10.002 ms  15.894 ms  32.415 ms  PWR_ZONE(95%) IDLE_OFF(3%)    0%  MIXED    
+ 238 membound    4x8192x4096            64    110  42.996 ms  65.843 ms 118.393 ms  PWR_ZONE(91%) IDLE_OFF(7%)    0%  MIXED    
+ 239 membound    4x8192x4096           256     27 182.513 ms 223.490 ms 478.231 ms  PWR_ZONE(98%) IDLE_OFF(2%)    0%  MIXED    
+ 240 membound    2x8192x4096             1   5000  362.42 µs  582.46 µs  704.29 µs  PERF(38%) DEADLINE(36%)    13%  DEADLINE 
+ 241 membound    2x8192x4096             2   3831  836.54 µs   1.288 ms   6.810 ms  PWR_ZONE(87%) IDLE_OFF(7%)    0%  MIXED    
+ 242 membound    2x8192x4096             4   2022   1.719 ms   2.652 ms   8.328 ms  PWR_ZONE(96%) IDLE_OFF(2%)    0%  MIXED    
+ 243 membound    2x8192x4096             8   1034   3.876 ms   7.135 ms  16.722 ms  PWR_ZONE(93%) IDLE_OFF(4%)    0%  MIXED    
+ 244 membound    2x8192x4096            16    526   8.329 ms  13.282 ms  33.355 ms  PWR_ZONE(94%) IDLE_OFF(4%)    0%  MIXED    
+ 245 membound    2x8192x4096            64    130  32.951 ms  57.144 ms 133.217 ms  PWR_ZONE(97%) IDLE_OFF(2%)    0%  MIXED    
+ 246 membound    2x8192x4096           256     34 134.046 ms 221.010 ms 515.773 ms  PWR_ZONE(93%) IDLE_OFF(4%)    0%  MIXED    
+
+========================================================================================================================
+Per-shape linear fit t(N_AMP) = a + b·N_AMP
+========================================================================================================================
+
+  square      8x8x8 (FLOPs=1.02K, A+B=512B)
+    fit: slope=71.21 ns/step  intercept=12354 ns  R²=0.9128  (8 points)
+    derived: 69.544 ps/FLOP  = 0.01 TFLOP/s  (max residual: 54.2%)
+
+  square      12x12x12 (FLOPs=3.46K, A+B=1.1KiB)
+    fit: slope=90.88 ns/step  intercept=12046 ns  R²=0.9564  (8 points)
+    derived: 26.297 ps/FLOP  = 0.04 TFLOP/s  (max residual: 87.3%)
+
+  square      16x16x16 (FLOPs=8.19K, A+B=2.0KiB)
+    fit: slope=178.77 ns/step  intercept=10030 ns  R²=0.9948  (8 points)
+    derived: 21.822 ps/FLOP  = 0.05 TFLOP/s  (max residual: 51.5%)
+
+  square      24x24x24 (FLOPs=27.65K, A+B=4.5KiB)
+    fit: slope=280.77 ns/step  intercept=7898 ns  R²=0.9984  (8 points)
+    derived: 10.155 ps/FLOP  = 0.10 TFLOP/s  (max residual: 73.3%)
+
+  square      32x32x32 (FLOPs=65.54K, A+B=8.0KiB)
+    fit: slope=462.51 ns/step  intercept=8126 ns  R²=0.9968  (8 points)
+    derived: 7.057 ps/FLOP  = 0.14 TFLOP/s  (max residual: 90.6%)
+
+  square      48x48x48 (FLOPs=221.18K, A+B=18.0KiB)
+    fit: slope=698.78 ns/step  intercept=20834 ns  R²=0.9979  (8 points)
+    derived: 3.159 ps/FLOP  = 0.32 TFLOP/s  (max residual: 57.5%)
+
+  square      64x64x64 (FLOPs=524.29K, A+B=32.0KiB)
+    fit: slope=689.76 ns/step  intercept=17473 ns  R²=0.9993  (8 points)
+    derived: 1.316 ps/FLOP  = 0.76 TFLOP/s  (max residual: 31.4%)
+
+  square      96x96x96 (FLOPs=1.77M, A+B=72.0KiB)
+    fit: slope=1322.48 ns/step  intercept=15564 ns  R²=0.9996  (8 points)
+    derived: 0.747 ps/FLOP  = 1.34 TFLOP/s  (max residual: 42.3%)
+
+  square      128x128x128 (FLOPs=4.19M, A+B=128.0KiB)
+    fit: slope=1900.49 ns/step  intercept=26697 ns  R²=0.9998  (8 points)
+    derived: 0.453 ps/FLOP  = 2.21 TFLOP/s  (max residual: 19.3%)
+
+  square      192x192x192 (FLOPs=14.16M, A+B=288.0KiB)
+    fit: slope=6726.51 ns/step  intercept=25130 ns  R²=0.9999  (8 points)
+    derived: 0.475 ps/FLOP  = 2.10 TFLOP/s  (max residual: 31.3%)
+
+  square      256x256x256 (FLOPs=33.55M, A+B=512.0KiB)
+    fit: slope=15675.37 ns/step  intercept=-1486 ns  R²=0.9999  (8 points)
+    derived: 0.467 ps/FLOP  = 2.14 TFLOP/s  (max residual: 141.7%)
+
+  square      384x384x384 (FLOPs=113.25M, A+B=1.1MiB)
+    fit: slope=58597.45 ns/step  intercept=-117386 ns  R²=0.9987  (7 points)
+    derived: 0.517 ps/FLOP  = 1.93 TFLOP/s  (max residual: 97.3%)
+
+  square      512x512x512 (FLOPs=268.44M, A+B=2.0MiB)
+    fit: slope=144460.68 ns/step  intercept=-80784 ns  R²=0.9999  (7 points)
+    derived: 0.538 ps/FLOP  = 1.86 TFLOP/s  (max residual: 127.2%)
+
+  square      768x768x768 (FLOPs=905.97M, A+B=4.5MiB)
+    fit: slope=453863.88 ns/step  intercept=7905 ns  R²=1.0000  (6 points)
+    derived: 0.501 ps/FLOP  = 2.00 TFLOP/s  (max residual: 7.8%)
+
+  square      1024x1024x1024 (FLOPs=2.15G, A+B=8.0MiB)
+    fit: slope=1285642.99 ns/step  intercept=-337578 ns  R²=0.9998  (5 points)
+    derived: 0.599 ps/FLOP  = 1.67 TFLOP/s  (max residual: 14.5%)
+
+  square      1536x1536x1536 (FLOPs=7.25G, A+B=18.0MiB)
+    fit: slope=4971733.30 ns/step  intercept=-614208 ns  R²=1.0000  (4 points)
+    derived: 0.686 ps/FLOP  = 1.46 TFLOP/s  (max residual: 1.5%)
+
+  square      2048x2048x2048 (FLOPs=17.18G, A+B=32.0MiB)
+    fit: slope=14884781.62 ns/step  intercept=-2158379 ns  R²=0.9999  (4 points)
+    derived: 0.866 ps/FLOP  = 1.15 TFLOP/s  (max residual: 3.3%)
+
+  ksweep_128  128x128x2 (FLOPs=65.54K, A+B=2.0KiB)
+    fit: slope=14.53 ns/step  intercept=7784 ns  R²=0.8961  (8 points)
+    derived: 0.222 ps/FLOP  = 4.51 TFLOP/s  (max residual: 32.5%)
+
+  ksweep_128  128x128x4 (FLOPs=131.07K, A+B=4.0KiB)
+    fit: slope=43.33 ns/step  intercept=10276 ns  R²=0.7280  (8 points)
+    derived: 0.331 ps/FLOP  = 3.02 TFLOP/s  (max residual: 106.9%)
+
+  ksweep_128  128x128x16 (FLOPs=524.29K, A+B=16.0KiB)
+    fit: slope=267.65 ns/step  intercept=9842 ns  R²=0.9956  (8 points)
+    derived: 0.510 ps/FLOP  = 1.96 TFLOP/s  (max residual: 87.9%)
+
+  ksweep_128  128x128x64 (FLOPs=2.10M, A+B=64.0KiB)
+    fit: slope=1192.72 ns/step  intercept=7673 ns  R²=0.9991  (8 points)
+    derived: 0.569 ps/FLOP  = 1.76 TFLOP/s  (max residual: 96.4%)
+
+  ksweep_128  128x128x256 (FLOPs=8.39M, A+B=256.0KiB)
+    fit: slope=3638.45 ns/step  intercept=30672 ns  R²=0.9998  (8 points)
+    derived: 0.434 ps/FLOP  = 2.31 TFLOP/s  (max residual: 30.8%)
+
+  ksweep_128  128x128x1024 (FLOPs=33.55M, A+B=1.0MiB)
+    fit: slope=24090.52 ns/step  intercept=28307 ns  R²=1.0000  (8 points)
+    derived: 0.718 ps/FLOP  = 1.39 TFLOP/s  (max residual: 29.8%)
+
+  ksweep_128  128x128x4096 (FLOPs=134.22M, A+B=4.0MiB)
+    fit: slope=93492.46 ns/step  intercept=58194 ns  R²=1.0000  (7 points)
+    derived: 0.697 ps/FLOP  = 1.44 TFLOP/s  (max residual: 9.6%)
+
+  ksweep_512  512x512x2 (FLOPs=1.05M, A+B=8.0KiB)
+    fit: slope=154.72 ns/step  intercept=16011 ns  R²=0.9618  (8 points)
+    derived: 0.148 ps/FLOP  = 6.78 TFLOP/s  (max residual: 96.5%)
+
+  ksweep_512  512x512x4 (FLOPs=2.10M, A+B=16.0KiB)
+    fit: slope=453.36 ns/step  intercept=11287 ns  R²=0.9983  (8 points)
+    derived: 0.216 ps/FLOP  = 4.63 TFLOP/s  (max residual: 73.8%)
+
+  ksweep_512  512x512x16 (FLOPs=8.39M, A+B=64.0KiB)
+    fit: slope=3393.56 ns/step  intercept=33721 ns  R²=0.9998  (8 points)
+    derived: 0.405 ps/FLOP  = 2.47 TFLOP/s  (max residual: 25.2%)
+
+  ksweep_512  512x512x64 (FLOPs=33.55M, A+B=256.0KiB)
+    fit: slope=13797.60 ns/step  intercept=9553 ns  R²=0.9999  (8 points)
+    derived: 0.411 ps/FLOP  = 2.43 TFLOP/s  (max residual: 27.6%)
+
+  ksweep_512  512x512x256 (FLOPs=134.22M, A+B=1.0MiB)
+    fit: slope=58648.59 ns/step  intercept=-9695 ns  R²=0.9997  (7 points)
+    derived: 0.437 ps/FLOP  = 2.29 TFLOP/s  (max residual: 50.2%)
+
+  ksweep_512  512x512x1024 (FLOPs=536.87M, A+B=4.0MiB)
+    fit: slope=280301.27 ns/step  intercept=-94402 ns  R²=0.9998  (6 points)
+    derived: 0.522 ps/FLOP  = 1.92 TFLOP/s  (max residual: 56.2%)
+
+  ksweep_512  512x512x4096 (FLOPs=2.15G, A+B=16.0MiB)
+    fit: slope=1204745.49 ns/step  intercept=-178930 ns  R²=1.0000  (5 points)
+    derived: 0.561 ps/FLOP  = 1.78 TFLOP/s  (max residual: 0.8%)
+
+  membound    2x8192x4096 (FLOPs=134.22M, A+B=128.0MiB)
+    fit: slope=524426.85 ns/step  intercept=-279076 ns  R²=1.0000  (7 points)
+    derived: 3.907 ps/FLOP  = 0.26 TFLOP/s  (max residual: 47.7%)
+
+  membound    8x4096x4096 (FLOPs=268.44M, A+B=64.1MiB)
+    fit: slope=334557.53 ns/step  intercept=-290087 ns  R²=0.9998  (7 points)
+    derived: 1.246 ps/FLOP  = 0.80 TFLOP/s  (max residual: 670.0%)
+
+  membound    4x8192x4096 (FLOPs=268.44M, A+B=128.1MiB)
+    fit: slope=715350.98 ns/step  intercept=-1060010 ns  R²=0.9998  (7 points)
+    derived: 2.665 ps/FLOP  = 0.38 TFLOP/s  (max residual: 142.4%)
+
+==============================================================================================================
+SQUARE DIAGONAL: M=N=K (cache-fit transition probe)
+==============================================================================================================
+       M=N=K    FLOPs        A+B  slope ns/step intercept ns      R²   ps/FLOP  TFLOP/s klass    
+           8    1.02K       512B          71.21        12354  0.9128    69.544    0.014 DEADLINE 
+          12    3.46K     1.1KiB          90.88        12046  0.9564    26.297    0.038 DEADLINE 
+          16    8.19K     2.0KiB         178.77        10030  0.9948    21.822    0.046 DEADLINE 
+          24   27.65K     4.5KiB         280.77         7898  0.9984    10.155    0.098 DEADLINE 
+          32   65.54K     8.0KiB         462.51         8126  0.9968     7.057    0.142 PERF     
+          48  221.18K    18.0KiB         698.78        20834  0.9979     3.159    0.317 PERF     
+          64  524.29K    32.0KiB         689.76        17473  0.9993     1.316    0.760 PERF     
+          96    1.77M    72.0KiB        1322.48        15564  0.9996     0.747    1.338 PERF     
+         128    4.19M   128.0KiB        1900.49        26697  0.9998     0.453    2.207 PRFBOOST 
+         192   14.16M   288.0KiB        6726.51        25130  0.9999     0.475    2.104 PRFBOOST 
+         256   33.55M   512.0KiB       15675.37        -1486  0.9999     0.467    2.141 MIXED    
+         384  113.25M     1.1MiB       58597.45      -117386  0.9987     0.517    1.933 MIXED    
+         512  268.44M     2.0MiB      144460.68       -80784  0.9999     0.538    1.858 MIXED    
+         768  905.97M     4.5MiB      453863.88         7905  1.0000     0.501    1.996 MIXED    
+        1024    2.15G     8.0MiB     1285642.99      -337578  0.9998     0.599    1.670 MIXED    
+        1536    7.25G    18.0MiB     4971733.30      -614208  1.0000     0.686    1.458 MIXED    
+        2048   17.18G    32.0MiB    14884781.62     -2158379  0.9999     0.866    1.154 MIXED    
+
+==============================================================================================================
+K-SWEEP at M=N=128 (K is the AI knob)
+==============================================================================================================
+           K    FLOPs        A+B  slope ns/step intercept ns      R²   ps/FLOP  TFLOP/s klass    
+         K=2   65.54K     2.0KiB          14.53         7784  0.8961     0.222    4.511 MIXED    
+         K=4  131.07K     4.0KiB          43.33        10276  0.7280     0.331    3.025 MIXED    
+        K=16  524.29K    16.0KiB         267.65         9842  0.9956     0.510    1.959 DEADLINE 
+        K=64    2.10M    64.0KiB        1192.72         7673  0.9991     0.569    1.758 MIXED    
+       K=256    8.39M   256.0KiB        3638.45        30672  0.9998     0.434    2.306 PRFBOOST 
+      K=1024   33.55M     1.0MiB       24090.52        28307  1.0000     0.718    1.393 MIXED    
+      K=4096  134.22M     4.0MiB       93492.46        58194  1.0000     0.697    1.436 PRFBOOST 
+
+==============================================================================================================
+K-SWEEP at M=N=512 (K is the AI knob)
+==============================================================================================================
+           K    FLOPs        A+B  slope ns/step intercept ns      R²   ps/FLOP  TFLOP/s klass    
+         K=2    1.05M     8.0KiB         154.72        16011  0.9618     0.148    6.777 DEADLINE 
+         K=4    2.10M    16.0KiB         453.36        11287  0.9983     0.216    4.626 DEADLINE 
+        K=16    8.39M    64.0KiB        3393.56        33721  0.9998     0.405    2.472 PRFBOOST 
+        K=64   33.55M   256.0KiB       13797.60         9553  0.9999     0.411    2.432 PERF     
+       K=256  134.22M     1.0MiB       58648.59        -9695  0.9997     0.437    2.289 MIXED    
+      K=1024  536.87M     4.0MiB      280301.27       -94402  0.9998     0.522    1.915 MIXED    
+      K=4096    2.15G    16.0MiB     1204745.49      -178930  1.0000     0.561    1.783 MIXED    
+
+==============================================================================================================
+MEMORY-BOUND PROBES (narrow-output × big-reduction)
+==============================================================================================================
+       shape    FLOPs        A+B  slope ns/step intercept ns      R²   ps/FLOP  TFLOP/s klass    
+  2x8192x4096  134.22M   128.0MiB      524426.85      -279076  1.0000     3.907    0.256 MIXED    
+  8x4096x4096  268.44M    64.1MiB      334557.53      -290087  0.9998     1.246    0.802 MIXED    
+  4x8192x4096  268.44M   128.1MiB      715350.98     -1060010  0.9998     2.665    0.375 MIXED    
+
+==============================================================================================================
+Discrimination verdict
+==============================================================================================================
+
+  Methodology fits: 3/34 shapes (9%) with R² > 0.99 AND max residual < 5%
+  -> methodology verdict: FAIL
+
+  ps/FLOP across shapes (lower = faster):
+    square diagonal: min=0.453  median=0.747  max=69.544  max/min=153.48×
+    largest square (2048³) ps/FLOP / small-square median = 0.66×
+    memory-bound probes: ps/FLOP = ['3.91', '1.25', '2.66']
+    membound max / square mid-cluster median = 8.01×
+
+  -> discrimination verdict: DISCRIMINATES
+     (square-diagonal ns/FLOP rises ≥ 3× toward the SLC boundary AND memory-bound probes elevate ≥ 5×)
+
+==============================================================================================================
+Reference anchors
+==============================================================================================================
+  014b fma_loop (compute-bound synthetic): 6.33 ns/FMA = 3165 ps/FLOP per thread (32-thread serial)
+  015 chase     (memory-latency-bound):    341.0 ns / chained DRAM load
+
+  Note: matmul ps/FLOP should be much lower than 014b's per-thread reference because matmul has M·N parallelism that
+  014b's 32-thread serial-chain didn't. The cross-shape *ratio* is the discrimination signal, not the absolute number.
