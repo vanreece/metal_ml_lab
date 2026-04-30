@@ -479,3 +479,145 @@ macOS 26.4.1, AC power, user-interactive QoS, K=0 (no warmup).
 **Still open for:** how this floor scales with cadence (002 re-run
 needed); whether the dramatic tail-tightening is reproducible across
 runs and macOS releases.
+
+## Does loop amplification + two-point/many-point timing recover per-iteration kernel cost reliably for kernels below the dispatch-overhead floor on M4 Max?
+
+**Answer (M4 Max only):** **MARGINAL PASS — yes, with stable-region
+detection.** Two amplification methods tested on a carry-dependent
+fma_loop base unit (FMA_PER_ITER = 64) at N ∈ {1, 2, 4, 8, 16, 64,
+256, 1024}.
+
+| method        | stable N range | slope (ns / amp-step) | intercept (ns) |     R² |
+|---------------|----------------|----------------------:|---------------:|-------:|
+| internal-loop | 16, 64, 256, 1024 |             405.28 |          6 860 | 1.0000 |
+| back-to-back  | 1, 2, 4, 8, 16, 64, 256 |        3 219.09 |          4 711 | 1.0000 |
+
+Within each method's stable region the linear model `t(N) = a + b·N`
+fits to R² = 1.0000 with residuals < 0.2 % (internal-loop) or < 8.6 %
+(back-to-back, driven by N=1). Intercepts in both fits land within
+±30 % of the prior 6.4 µs cool-DVFS dispatch-overhead floor.
+
+**Two regime boundaries are visible in the timing data:**
+
+1. **Internal-loop, between N=8 and N=16:** per-step slope goes
+   *negative* (more amplification runs faster) — the chip transitions
+   to a higher DVFS regime. Predicted in pre-reg.
+2. **Back-to-back, between N=256 and N=1024:** per-step slope
+   collapses 15× (3 197 → 209 ns/dispatch); cell distribution becomes
+   bimodal (p50 = 988 µs, p90 = 3.36 ms). **Not** predicted —
+   amplification beyond ~256 dispatches stops being a transparent
+   abstraction. Mechanism unknown; possibly dispatch pipelining or
+   sub-floor (1.7 µs) cycling under a long enough cb.
+
+**Per-encode cost** (slope_b2b − slope_internal in stable region) =
+**2 814 ns**. Larger than exp 005's 833 ns inter-encoder gap, because
+it includes per-dispatch GPU-side overhead, not just the gap. This
+is a refinement of the exp 005 result, not a contradiction: 833 ns
+is the *gap* between encoders, not the *full per-dispatch cost in a
+back-to-back chain*.
+
+**Practical consequence:** internal-loop amplification is the
+methodology of choice for per-iteration kernel cost recovery on
+M4 Max for kernels below the dispatch-overhead floor. Stable-region
+detection (per-step slope variance) replaces PWRCTRL classification
+when cells run shorter than IOReport's 250 ms cadence — IOReport
+cannot resolve regime per cell at sub-second cell durations.
+
+**Hardware/software:** Apple M4 Max 36GB, `applegpu_g16s`,
+macOS 26.4.1, AC power, user-interactive QoS, sleep_0 between
+trials, IOReport sidecar at 250 ms.
+**Closed by:** experiment 014 on 2026-04-29 (timestamp prefix
+`20260429T115430`).
+**Refined by:** experiment 014b on 2026-04-29 (timestamp prefix
+`20260429T150438`) with 5 000-trial-per-cell long-cell runs.
+Three of four 014 stable-region numbers reproduce within ±2 %; the
+fourth (b2b intercept) drifts to 4 087 ns (was 4 711 ns), 13 % low.
+**The slopes are canonical** (405.17 ns/N internal-loop, 3 156.67
+ns/N back-to-back); the b2b intercept of 4 087 ns supersedes 014's.
+Two refinements: (a) cell-internal trial distributions are
+**bimodal** at every N where the cell catches DEADLINE-mode cycling
+— including N=1 (p25 = 2.96 µs vs p50 = 7.12 µs), so the 6.4 µs
+"dispatch-overhead floor" is the slow mode of a bimodal
+distribution and the fast mode at ~2-3 µs has been there all along;
+(b) the b2b N=1024 collapse is **DVFS-PARTIAL** — DEADLINE-window
+trials are 23 % faster than PERF-window trials, but most of the
+bimodality is sub-250 ms, faster than IOReport can resolve. The
+kink-cell at internal-loop N=16 is the cleanest evidence that
+DEADLINE-mode timing is a measurable steady-state regime, not just
+sub-floor onset transient.
+**Still open for:** cross-chip validation on M1 Pro; period of the
+sub-250 ms PWRCTRL cycling that drives the b2b collapse.
+
+## Does loop amplification + many-point timing also work for a memory-latency-bound base unit on M4 Max?
+
+**Answer (M4 Max only):** **PASS — yes, internal-loop only.** A
+pointer-chase base unit (CHASE_PER_ITER=64 chained loads through a
+128 MB random-permutation table) was amplified across the same N
+grid as 014/014b. Internal-loop stable-region fit:
+
+| metric | value |
+|---|---:|
+| stable region | N ∈ {64, 256, 1024} |
+| slope         | 21 825 ns / amp-step |
+| per-load latency | 341 ns / chained load |
+| R²            | 0.9999 |
+
+**Cross-bottleneck slope ratio:** memory:compute per-iter latency
+ratio is **53.9×** (chase 341 ns/load vs fma_loop 6.3 ns/fma).
+Memory-bound is ~54× slower per chained operation than ALU-bound on
+M4 Max — at the high end of the plausible range for SLC-miss DRAM
+latency.
+
+**Critical operational caveat: back-to-back amplification is
+**INVALID** for memory-bound kernels.** Each new b2b dispatch
+restarts `addr = tid` so first loads of each dispatch are cache-
+predictable; small-N b2b cells show near-zero or negative per-step
+slope (e.g., 4 → 8 step is −2 645 ns/N). Internal-loop runs one
+continuous chain that diverges into uncached lines and is the only
+correct method.
+
+**Hardware/software:** Apple M4 Max 36GB, `applegpu_g16s`,
+macOS 26.4.1, AC power, user-interactive QoS, sleep_0 between
+trials, 5 s cell target with 5 000-trial cap, IOReport sidecar at
+250 ms.
+**Closed by:** experiment 015 on 2026-04-29 (timestamp prefix
+`20260429T151743`).
+**Still open for:** cross-chip validation on M1 Pro; whether the
+methodology applies to a real (non-synthetic) memory-bound ML
+kernel; bandwidth-bound (vs latency-bound) characterization;
+quantifying the cache-reuse asymmetry as a function of table size.
+
+## What triggers the PRFBOOST PWRCTRL state on M4 Max?
+
+**Answer (M4 Max only):** **Sustained memory-bound dispatches with
+single-dispatch wall-clock ≥ ~5 ms** push the controller into
+PRFBOOST. Compute-bound dispatches at the same wall-clock do NOT
+engage it.
+
+**Evidence (exp 015):**
+
+| cell | kernel | per-dispatch | PWRCTRL top |
+|---:|---|---:|---|
+| internal-loop chase N=256  | 64 chained loads × 256 amp steps | ~5.5 ms | **PRFBOOST(94 %)** IDLE_OFF(5 %) |
+| internal-loop chase N=1024 | 64 chained loads × 1024 amp steps | ~22 ms | **PRFBOOST(97 %)** IDLE_OFF(2 %) |
+
+For comparison, exp 014b internal-loop fma_loop N=1024 has 422 µs
+per dispatch and stays in PERF (59 %), never engaging PRFBOOST.
+The trigger is memory-intensity-driven, not duration-driven.
+
+**Practical consequence:** PRFBOOST cells run at ~93-97 % P15
+residency (peak DVFS) — the chip's response to sustained DRAM-
+intensity workloads. Future memory-bound experiments running
+≥ ~5 ms per dispatch will engage it; expect tight unimodal timing
+distributions in this regime (014b-style bimodal cycling does not
+appear in PRFBOOST-dominated cells).
+
+**Hardware/software:** Apple M4 Max 36GB, `applegpu_g16s`,
+macOS 26.4.1, AC power.
+**Closed by:** experiment 015 on 2026-04-29 (timestamp prefix
+`20260429T151743`).
+**Still open for:** PRFBOOST behavior on M1 Pro (or absence of —
+state may not exist); the lower bound of the trigger (we
+established ≥ 5 ms triggers; haven't searched for the boundary
+between PERF-only and PRFBOOST-engaged); whether bandwidth-bound
+(vs latency-bound) memory work also triggers it.
