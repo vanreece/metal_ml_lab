@@ -1,0 +1,10 @@
+# IOReport telemetry  interval=250ms  csv=/Users/vanreece/dev/metal_ml_lab/experiments/014b-amplification-long-cells/raw/20260429T130048.csv  states_csv=/Users/vanreece/dev/metal_ml_lab/experiments/014b-amplification-long-cells/raw/20260429T130048-states.csv
+# Ctrl-C to stop
+# time        gpu mW    cpu mW    ane mW   dram mW   amcc mW    dcs mW    afr mW   disp mW    isp mW    ave mW  gpu_sram mW
+  13:00:49    257 mW    999 mW      0 mW    451 mW    585 mW    545 mW     29 mW    332 mW      5 mW      3 mW      0 mW
+  13:00:49    175 mW   1706 mW      0 mW    514 mW    704 mW    893 mW     23 mW    338 mW      2 mW      5 mW      0 mW
+  13:00:49    234 mW   1572 mW      0 mW    528 mW    842 mW    970 mW     26 mW    344 mW      5 mW      5 mW      0 mW
+  13:00:50    217 mW   2558 mW      0 mW    680 mW    957 mW   1152 mW     28 mW    340 mW      5 mW      5 mW      0 mW
+  13:00:50    186 mW   1521 mW      0 mW    498 mW    833 mW    934 mW     19 mW    344 mW      5 mW      2 mW      0 mW
+  13:00:51    244 mW   1611 mW      0 mW    570 mW    809 mW   1032 mW     29 mW    324 mW      2 mW      4 mW      0 mW
+  13:00:51    181 mW   1505 mW      0 mW    460 mW    696 mW    758 mW     21 mW    354 mW      5 mW      5 mW      0 mW
