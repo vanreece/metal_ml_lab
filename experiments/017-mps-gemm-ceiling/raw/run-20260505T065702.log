@@ -1,0 +1,67 @@
+Installed 5 packages in 25ms
+==============================================================================
+Experiment 017: MPS GEMM ceiling (fp32, no transpose)
+==============================================================================
+device: Apple M4 Max  arch: applegpu_g16s
+OS:     macOS-26.4.1-arm64-arm-64bit-Mach-O
+power:  Now drawing from 'Battery Power'
+qos:    pthread_set_qos_class_self_np -> 0
+
+plan: 34 shapes, 34 cells (no N_AMP grid for MPS)
+
+buffer sizes: A=16.0MiB  B=128.0MiB  C=16.0MiB
+initializing A (4,194,304 floats) and B (33,554,432 floats) with seed 16092604...
+  initialized in 0.2s
+
+sanity check: M=N=K=128, MPS vs numpy...
+  max abs error vs numpy: 0.0000e+00
+
+building 34 MPS kernels...
+  done in 0.00s
+ioreport.py: pid=95713
+
+=== phase 0: baseline 2.0s ===
+
+=== phase 1: 34 cells ===
+  cell   0: square         8x   8x8      trials= 5000 (CAP)  p50=     10208 p90=     10792  (0.78s)
+  cell   1: square        12x  12x12     trials= 5000 (CAP)  p50=      5167 p90=     11500  (0.75s)
+  cell   2: square        16x  16x16     trials= 5000 (CAP)  p50=      5875 p90=     17958  (0.74s)
+  cell   3: square        24x  24x24     trials= 5000 (CAP)  p50=      8292 p90=     20250  (0.73s)
+  cell   4: square        32x  32x32     trials= 5000 (CAP)  p50=      7667 p90=     18208  (0.70s)
+  cell   5: square        48x  48x48     trials= 5000 (CAP)  p50=     11750 p90=     22375  (0.74s)
+  cell   6: square        64x  64x64     trials= 5000 (CAP)  p50=     19375 p90=     20042  (0.72s)
+  cell   7: square        96x  96x96     trials= 5000 (CAP)  p50=     26083 p90=     26958  (0.77s)
+  cell   8: square       128x 128x128    trials= 5000 (CAP)  p50=     28250 p90=     28792  (0.76s)
+  cell   9: square       192x 192x192    trials= 5000 (CAP)  p50=     37250 p90=     38042  (0.83s)
+  cell  10: square       256x 256x256    trials= 5000 (CAP)  p50=     45792 p90=     46375  (0.85s)
+  cell  11: square       384x 384x384    trials= 5000 (CAP)  p50=     92417 p90=     95583  (1.04s)
+  cell  12: square       512x 512x512    trials= 5000 (CAP)  p50=     62375 p90=    147500  (1.13s)
+  cell  13: square       768x 768x768    trials= 5000 (CAP)  p50=    234167 p90=    430583  (2.22s)
+  cell  14: square      1024x1024x1024   trials= 5000 (CAP)  p50=    275625 p90=    528000  (2.57s)
+  cell  15: square      1536x1536x1536   trials= 5000 (CAP)  p50=    676250 p90=    688250  (4.40s)
+  cell  16: square      2048x2048x2048   trials= 2637  p50=   1609042 p90=   1930083  (5.02s)
+  cell  17: ksweep_128   128x 128x2      trials= 5000 (CAP)  p50=     11542 p90=     12000  (0.77s)
+  cell  18: ksweep_128   128x 128x4      trials= 5000 (CAP)  p50=     11625 p90=     12375  (0.72s)
+  cell  19: ksweep_128   128x 128x16     trials= 5000 (CAP)  p50=     12458 p90=     13125  (0.73s)
+  cell  20: ksweep_128   128x 128x64     trials= 5000 (CAP)  p50=     13500 p90=     14417  (0.73s)
+  cell  21: ksweep_128   128x 128x256    trials= 5000 (CAP)  p50=     26375 p90=     27208  (0.77s)
+  cell  22: ksweep_128   128x 128x1024   trials= 5000 (CAP)  p50=     44500 p90=     79083  (0.98s)
+  cell  23: ksweep_128   128x 128x4096   trials= 5000 (CAP)  p50=     39250 p90=    134875  (1.06s)
+  cell  24: ksweep_512   512x 512x2      trials= 5000 (CAP)  p50=     16833 p90=     17542  (0.76s)
+  cell  25: ksweep_512   512x 512x4      trials= 5000 (CAP)  p50=     16625 p90=     17500  (0.76s)
+  cell  26: ksweep_512   512x 512x16     trials= 5000 (CAP)  p50=     19542 p90=     20250  (0.77s)
+  cell  27: ksweep_512   512x 512x64     trials= 5000 (CAP)  p50=     30042 p90=     30958  (0.82s)
+  cell  28: ksweep_512   512x 512x256    trials= 5000 (CAP)  p50=     29375 p90=     79542  (0.97s)
+  cell  29: ksweep_512   512x 512x1024   trials= 5000 (CAP)  p50=     79125 p90=    274500  (1.55s)
+  cell  30: ksweep_512   512x 512x4096   trials= 5000 (CAP)  p50=    316167 p90=    447375  (2.56s)
+  cell  31: membound       8x4096x4096   trials= 5000 (CAP)  p50=    215417 p90=    432417  (2.20s)
+  cell  32: membound       4x8192x4096   trials= 5000 (CAP)  p50=    357917 p90=    456917  (2.87s)
+  cell  33: membound       2x8192x4096   trials= 5000 (CAP)  p50=    365333 p90=    591458  (3.11s)
+
+=== phase 2: tail 2.0s ===
+
+stopping ioreport.py (SIGINT)
+ioreport.py rc=0
+wrote 20260505T065707-meta.txt
+
+Now run: uv run experiments/017-mps-gemm-ceiling/analysis.py --prefix 20260505T065707
